@@ -26,16 +26,28 @@
       inset: 0;
     }
 
+    /* OS 模式啟動時整體光暈 / 邊框 */
+    body.os-active::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      border: 2px solid rgba(90,140,255,0.8);
+      box-shadow: 0 0 40px rgba(90,140,255,0.6) inset;
+      pointer-events: none;
+      z-index: 5;
+    }
+
     /* 左側直向時間線容器 */
     #timeline {
       position: fixed;
-      top: calc(env(safe-area-inset-top, 8px) + 8px);
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); /* 留給 toolbar */
+      top: calc(env(safe-area-inset-top, 8px) + 8px + 8px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
       left: 4px;
-      width: 140px;
+      width: 140px; /* 加大給文字用 */
       z-index: 10;
       pointer-events: none;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", "Courier New", monospace;
       color: #d0d8ff;
     }
 
@@ -45,10 +57,10 @@
       top: calc(env(safe-area-inset-top, 8px));
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(5,10,30,0.8);
+      background: rgba(5,10,30,0.85);
       padding: 6px 16px;
       border-radius: 999px;
-      border: 1px solid rgba(120,140,255,0.5);
+      border: 1px solid rgba(120,140,255,0.6);
       font-size: 13px;
       z-index: 11;
       max-width: 80%;
@@ -58,10 +70,31 @@
       text-overflow: ellipsis;
     }
 
-    /* 中央資訊區 */
+    /* OS 模式橫幅 */
+    #osBanner {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 8px) + 40px);
+      right: 10px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: rgba(30, 200, 255, 0.15);
+      border: 1px solid rgba(130, 210, 255, 0.8);
+      color: #e5f7ff;
+      z-index: 11;
+      letter-spacing: 1px;
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+    }
+
+    body.os-active #osBanner {
+      opacity: 1;
+    }
+
+    /* 中央資訊區 + 進度圓環 */
     #center {
       position: fixed;
-      top: 50%;
+      top: 52%;
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
@@ -69,19 +102,41 @@
       z-index: 9;
       padding: 0 16px;
     }
-    #center .mode {
-      font-size: 26px;
+
+    #ringContainer {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      margin: 0 auto;
+    }
+
+    #progressRing {
+      position: absolute;
+      inset: 0;
+    }
+
+    #centerInner {
+      position: absolute;
+      inset: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #centerInner .mode {
+      font-size: 22px;
       letter-spacing: 4px;
       opacity: 0.8;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
-    #center .main {
-      font-size: 56px;
+    #centerInner .main {
+      font-size: 52px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
-    #center .sub {
-      font-size: 16px;
+    #centerInner .sub {
+      font-size: 14px;
       opacity: 0.85;
     }
 
@@ -109,11 +164,11 @@
 
     #toolbarInner button {
       border: none;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 999px;
       background: #141a33;
       color: #e5e9ff;
-      font-size: 13px;
+      font-size: 12px;
       font-family: inherit;
       min-width: 52px;
     }
@@ -127,8 +182,8 @@
       transform: scale(0.96);
     }
 
-    /* 編輯行程面板（手機版） */
-    #planPanel {
+    /* 編輯行程 / 備忘錄 / 時間設定 面板（手機版） */
+    #planPanel, #memoPanel, #timePanel {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.65);
@@ -140,7 +195,7 @@
       padding: 16px;
     }
 
-    #planBox {
+    #planBox, #memoBox, #timeBox {
       width: 100%;
       max-width: 420px;
       background: #0b0d1a;
@@ -150,30 +205,31 @@
       box-shadow: 0 0 24px rgba(0,0,0,0.8);
     }
 
-    #planTitle {
+    #planTitle, #memoTitle, #timeTitle {
       font-size: 17px;
       margin-bottom: 6px;
     }
-    #planHint {
+    #planHint, #memoHint, #timeHint {
       font-size: 12px;
       opacity: 0.7;
       margin-bottom: 8px;
     }
 
-    #planArea {
+    #planArea, #memoArea {
       width: 100%;
       height: 180px;
       border-radius: 10px;
       border: 1px solid #3c4370;
       background: #050616;
       color: #e9ecff;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", "Courier New", monospace;
       font-size: 13px;
       padding: 8px;
       resize: none;
     }
 
-    #planButtons {
+    #planButtons, #memoButtons, #timeButtons {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
@@ -181,7 +237,9 @@
       font-size: 13px;
     }
 
-    #planButtons button {
+    #planButtons button,
+    #memoButtons button,
+    #timeButtons button {
       border-radius: 999px;
       border: none;
       padding: 6px 12px;
@@ -189,28 +247,51 @@
       font-size: 13px;
     }
 
-    /* 中央 HUD 提示（行程切換） */
-    #toast {
+    .timeRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .timeRow input[type="time"] {
+      background:#050616;
+      color:#e9ecff;
+      border-radius: 8px;
+      border:1px solid #3c4370;
+      padding:6px 10px;
+      font-size:14px;
+    }
+
+    /* 中央 HUD 提示（行程切換 / 模式切換） */
+    #toast, #modeHud {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.95);
       color: #000;
       padding: 14px 22px;
       border-radius: 10px;
-      font-size: 20px;
       font-family: ui-monospace, monospace;
       box-shadow: 0 0 24px rgba(255,255,255,0.9);
       opacity: 0;
       pointer-events: none;
       z-index: 40;
-      transition: opacity 0.4s ease-out;
+      transition: opacity 0.35s ease-out;
       max-width: 90%;
       text-align: center;
-      white-space: nowrap;
+      white-space: pre-line;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    #modeHud {
+      font-size: 22px;
+      padding: 18px 26px;
+    }
+    #toast {
+      font-size: 18px;
     }
   </style>
 </head>
@@ -220,14 +301,41 @@
 <!-- 顯示目前這一段行程 -->
 <div id="currentBlock"></div>
 
+<!-- OS 模式橫幅 -->
+<div id="osBanner">STUDY OS • ACTIVE</div>
+
 <!-- 左側直向時間線 -->
 <div id="timeline"></div>
 
-<!-- 中央時間 / 番茄模式 -->
+<!-- 中央時間 / 番茄模式 + 進度圓環 -->
 <div id="center">
-  <div class="mode" id="centerMode">TIME</div>
-  <div class="main" id="centerMain">00:00</div>
-  <div class="sub" id="centerSub"></div>
+  <div id="ringContainer">
+    <svg id="progressRing" width="180" height="180">
+      <!-- 背景圓 -->
+      <circle
+        cx="90" cy="90" r="70"
+        stroke="rgba(120,130,200,0.25)"
+        stroke-width="6"
+        fill="none" />
+      <!-- 進度圓 -->
+      <circle
+        id="progressCircle"
+        cx="90" cy="90" r="70"
+        stroke="#4fa3ff"
+        stroke-width="6"
+        fill="none"
+        stroke-linecap="round"
+        transform="rotate(-90 90 90)"
+        stroke-dasharray="440"
+        stroke-dashoffset="440" />
+    </svg>
+
+    <div id="centerInner">
+      <div class="mode" id="centerMode">TIME</div>
+      <div class="main" id="centerMain">00:00</div>
+      <div class="sub"  id="centerSub"></div>
+    </div>
+  </div>
 </div>
 
 <!-- 下方工具列 -->
@@ -236,6 +344,8 @@
     <button class="primary" id="btnPomo">▶︎ Pomo</button>
     <button id="btnMode">Mode</button>
     <button id="btnPlan">Plan</button>
+    <button id="btnMemo">Memo</button>
+    <button id="btnTimeSettings">Time</button>
     <button class="danger" id="btnUniverse">⚡</button>
   </div>
 </div>
@@ -247,14 +357,51 @@
     <div id="planHint">格式：<br>07:00-09:00 數學<br>09:00-10:30 物理</div>
     <textarea id="planArea"></textarea>
     <div id="planButtons">
-      <button id="btnCancel">取消</button>
-      <button id="btnSave" style="background:#2d5bff; color:white;">儲存</button>
+      <button id="btnCancelPlan">取消</button>
+      <button id="btnSavePlan" style="background:#2d5bff; color:white;">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 備忘錄 -->
+<div id="memoPanel">
+  <div id="memoBox">
+    <div id="memoTitle">備忘錄</div>
+    <div id="memoHint">寫今天的重點、待辦、想法。會自動存在這台裝置裡。</div>
+    <textarea id="memoArea" placeholder="例如：&#10;- 物理第 3 題要重做&#10;- 記得問老師作業第 5 題"></textarea>
+    <div id="memoButtons">
+      <button id="btnCancelMemo">關閉</button>
+      <button id="btnSaveMemo" style="background:#2d5bff; color:white;">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 時間設定面板（起床 / 睡覺） -->
+<div id="timePanel">
+  <div id="timeBox">
+    <div id="timeTitle">時間軸範圍設定</div>
+    <div id="timeHint">這裡只影響畫面上的時間線，不會改你手機的鬧鐘。</div>
+
+    <div class="timeRow">
+      <span>起床</span>
+      <input id="timeWakeInput" type="time">
+    </div>
+
+    <div class="timeRow">
+      <span>睡覺</span>
+      <input id="timeSleepInput" type="time">
+    </div>
+
+    <div id="timeButtons">
+      <button id="btnCancelTime">取消</button>
+      <button id="btnSaveTime" style="background:#2d5bff; color:white;">儲存</button>
     </div>
   </div>
 </div>
 
 <!-- 中央 HUD 提示 -->
 <div id="toast"></div>
+<div id="modeHud"></div>
 
 <script>
 /* ========== 基本 DOM ========== */
@@ -270,17 +417,34 @@ const timelineDiv = document.getElementById("timeline");
 const btnPomo     = document.getElementById("btnPomo");
 const btnMode     = document.getElementById("btnMode");
 const btnPlan     = document.getElementById("btnPlan");
+const btnMemo     = document.getElementById("btnMemo");
+const btnTimeSettings = document.getElementById("btnTimeSettings");
 const btnUniverse = document.getElementById("btnUniverse");
 
 const planPanel   = document.getElementById("planPanel");
 const planArea    = document.getElementById("planArea");
-const btnCancel   = document.getElementById("btnCancel");
-const btnSave     = document.getElementById("btnSave");
+const btnCancelPlan = document.getElementById("btnCancelPlan");
+const btnSavePlan   = document.getElementById("btnSavePlan");
+
+const memoPanel   = document.getElementById("memoPanel");
+const memoArea    = document.getElementById("memoArea");
+const btnCancelMemo = document.getElementById("btnCancelMemo");
+const btnSaveMemo   = document.getElementById("btnSaveMemo");
+
+const timePanel     = document.getElementById("timePanel");
+const timeWakeInput = document.getElementById("timeWakeInput");
+const timeSleepInput= document.getElementById("timeSleepInput");
+const btnCancelTime = document.getElementById("btnCancelTime");
+const btnSaveTime   = document.getElementById("btnSaveTime");
 
 const toast       = document.getElementById("toast");
+const modeHud     = document.getElementById("modeHud");
+const progressCircle = document.getElementById("progressCircle");
+
+const RING_CIRC = 2 * Math.PI * 70; // r=70
 
 /* ========== Conway ==========
-   手機版也保留永動背景，但略微溫和一點 */
+   手機版：永動，但色調柔一點 */
 const cellSize = 7;
 let cols, rows;
 let grid = [];
@@ -348,7 +512,9 @@ function drawConway() {
   ctx.fillStyle = "#05060f";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  ctx.fillStyle = "#4fa3ff2a";
+  const color = (mode === "FOCUS") ? "#4fa3ff2a" :
+                (mode === "BREAK") ? "#4dffb52a" : "#4fa3ff2a";
+  ctx.fillStyle = color;
   for (let y=0; y<rows; y++)
     for (let x=0; x<cols; x++)
       if (grid[y][x])
@@ -368,13 +534,14 @@ function applyMode() {
   secondsLeft = (mode === "FOCUS" ? focusMinutes : breakMinutes) * 60;
 }
 
+// 每秒番茄
 setInterval(() => {
   if (!pomoActive || !pomoRunning) return;
   secondsLeft--;
   if (secondsLeft <= 0) {
     mode = (mode === "FOCUS") ? "BREAK" : "FOCUS";
     applyMode();
-    showToast(mode === "FOCUS" ? "回到 FOCUS" : "休息時間");
+    showModeHud(mode === "FOCUS" ? "FOCUS\n開始" : "BREAK\n開始");
   }
 }, 1000);
 
@@ -392,6 +559,9 @@ if (localStorage.mobileTimeline) {
   try { schedule = JSON.parse(localStorage.mobileTimeline); } catch(e){}
 }
 
+if (localStorage.mobileWake)  WAKE_TIME  = localStorage.mobileWake;
+if (localStorage.mobileSleep) SLEEP_TIME = localStorage.mobileSleep;
+
 function timeToMin(t) {
   const [h,m] = t.split(":").map(Number);
   return h*60+m;
@@ -402,12 +572,15 @@ let lastBlock = null;
 function showToast(msg) {
   toast.textContent = msg;
   toast.style.opacity = 0;
-  setTimeout(()=>{
-    toast.style.opacity = 1;
-  },10);
-  setTimeout(()=>{
-    toast.style.opacity = 0;
-  },1000);
+  setTimeout(()=>{ toast.style.opacity = 1; },10);
+  setTimeout(()=>{ toast.style.opacity = 0; },1000);
+}
+
+function showModeHud(msg) {
+  modeHud.textContent = msg;
+  modeHud.style.opacity = 0;
+  setTimeout(()=>{ modeHud.style.opacity = 1; },10);
+  setTimeout(()=>{ modeHud.style.opacity = 0; },900);
 }
 
 function updateCurrentBlock() {
@@ -437,7 +610,7 @@ function updateCurrentBlock() {
   }
 }
 
-/* ========== 左側直向時間線渲染 ========== */
+/* ========== 左側直向時間線 ========== */
 function renderTimeline() {
   const div = timelineDiv;
   div.innerHTML = "";
@@ -464,10 +637,9 @@ function renderTimeline() {
   schedule.forEach(blk => {
     const st = timeToMin(blk.start);
     const ed = timeToMin(blk.end);
-    const topPct  = (st - sMin) / total * 100;
+    const topPct    = (st - sMin) / total * 100;
     const heightPct = (ed - st) / total * 100;
 
-    // 藍色區塊（在時間線上）
     const seg = document.createElement("div");
     seg.style.position = "absolute";
     seg.style.left = "0";
@@ -478,12 +650,11 @@ function renderTimeline() {
     seg.style.background = "rgba(120,160,255,0.45)";
     bar.appendChild(seg);
 
-    // 右邊文字：完整時間＋標題
-    const midPct = (st + ed - 2*sMin) / (2*total) * 100; // 區塊中間
+    const midPct = (st + ed - 2*sMin) / (2*total) * 100;
     const lab = document.createElement("div");
     lab.textContent = `${blk.start}-${blk.end} ${blk.label}`;
     lab.style.position = "absolute";
-    lab.style.left = "50px";        // 時間線右邊一點
+    lab.style.left = "50px";
     lab.style.top = midPct + "%";
     lab.style.transform = "translateY(-50%)";
     lab.style.fontSize = "11px";
@@ -492,20 +663,22 @@ function renderTimeline() {
     div.appendChild(lab);
   });
 
-  // 現在時間 marker（小白點）
+  // 現在時間 marker → 頭像
   if (nowMin >= sMin && nowMin <= eMin) {
     const nowPct = (nowMin - sMin) / total * 100;
-    const mk = document.createElement("div");
+    const mk = document.createElement("img");
+    mk.src = "assets/avatar.png";  // 記得放這個檔案
+    mk.alt = "now";
     mk.style.position = "absolute";
     mk.style.left = "37px";
     mk.style.top = nowPct + "%";
     mk.style.transform = "translate(-50%, -50%)";
-    mk.style.width = "14px";
-    mk.style.height = "14px";
+    mk.style.width = "20px";
+    mk.style.height = "20px";
     mk.style.borderRadius = "50%";
-    mk.style.background = "#fff";
+    mk.style.objectFit = "cover";
     mk.style.boxShadow = "0 0 8px #fff";
-    div.appendChild(mk);
+    bar.appendChild(mk);
   }
 
   // 左側刻度（起床 / 中間 / 睡覺時間）
@@ -520,9 +693,9 @@ function renderTimeline() {
   div.appendChild(labels);
 
   const points = [
-    { t: sMin,          text: WAKE_TIME },
+    { t: sMin,           text: WAKE_TIME },
     { t: sMin + total/2, text: `${String(Math.floor((sMin+total/2)/60)).padStart(2,"0")}:00` },
-    { t: eMin,          text: SLEEP_TIME }
+    { t: eMin,           text: SLEEP_TIME }
   ];
 
   points.forEach(p => {
@@ -535,6 +708,41 @@ function renderTimeline() {
     lab.style.transform = "translateY(-50%)";
     labels.appendChild(lab);
   });
+}
+
+/* ========== 進度圓環（今日行程完成度） ========== */
+function updateProgressRing() {
+  const nowStr = new Date().toTimeString().slice(0,5);
+  const nowMin = timeToMin(nowStr);
+
+  let totalDur = 0;
+  let doneDur  = 0;
+
+  schedule.forEach(blk => {
+    const st = timeToMin(blk.start);
+    const ed = timeToMin(blk.end);
+    const dur = Math.max(0, ed - st);
+    totalDur += dur;
+
+    if (nowMin >= ed) {
+      doneDur += dur;
+    } else if (nowMin > st && nowMin < ed) {
+      doneDur += (nowMin - st);
+    }
+  });
+
+  if (totalDur <= 0) {
+    progressCircle.style.strokeDasharray  = RING_CIRC;
+    progressCircle.style.strokeDashoffset = RING_CIRC;
+    return;
+  }
+
+  let progress = doneDur / totalDur;
+  if (progress < 0) progress = 0;
+  if (progress > 1) progress = 1;
+
+  progressCircle.style.strokeDasharray  = RING_CIRC;
+  progressCircle.style.strokeDashoffset = RING_CIRC * (1 - progress);
 }
 
 /* ========== 中央顯示 ========== */
@@ -554,6 +762,8 @@ function updateCenter() {
     centerMain.textContent = `${m}:${s}`;
     centerSub.textContent  = (mode==="FOCUS" ? "專注中" : "休息中");
   }
+
+  updateProgressRing();
 }
 
 /* ========== 主迴圈 ========== */
@@ -602,19 +812,68 @@ function savePlan() {
 }
 
 btnPlan.addEventListener("click", openPlan);
-btnCancel.addEventListener("click", closePlan);
-btnSave.addEventListener("click", savePlan);
+btnCancelPlan.addEventListener("click", closePlan);
+btnSavePlan.addEventListener("click", savePlan);
+
+/* ========== 備忘錄 ========== */
+if (localStorage.mobileMemo) {
+  memoArea.value = localStorage.mobileMemo;
+}
+
+function openMemo() {
+  memoPanel.style.display = "flex";
+}
+function closeMemo() {
+  memoPanel.style.display = "none";
+}
+function saveMemo() {
+  localStorage.mobileMemo = memoArea.value;
+  closeMemo();
+}
+
+btnMemo.addEventListener("click", openMemo);
+btnCancelMemo.addEventListener("click", closeMemo);
+btnSaveMemo.addEventListener("click", saveMemo);
+
+/* ========== 時間設定面板 ========== */
+
+function openTimePanel() {
+  timeWakeInput.value  = WAKE_TIME;
+  timeSleepInput.value = SLEEP_TIME;
+  timePanel.style.display = "flex";
+}
+
+function closeTimePanel() {
+  timePanel.style.display = "none";
+}
+
+btnTimeSettings.addEventListener("click", openTimePanel);
+btnCancelTime.addEventListener("click", closeTimePanel);
+btnSaveTime.addEventListener("click", () => {
+  const w = timeWakeInput.value || WAKE_TIME;
+  const s = timeSleepInput.value || SLEEP_TIME;
+
+  WAKE_TIME  = w;
+  SLEEP_TIME = s;
+  localStorage.mobileWake  = WAKE_TIME;
+  localStorage.mobileSleep = SLEEP_TIME;
+
+  closeTimePanel();
+  showToast(`時間線更新\n${WAKE_TIME} - ${SLEEP_TIME}`);
+});
 
 /* ========== 下方按鈕事件 ========== */
 
 // ▶︎ Pomo
 btnPomo.addEventListener("click", () => {
   if (!pomoActive) {
-    // 啟動番茄模式
+    // 啟動番茄模式 + OS 模式
     pomoActive  = true;
     pomoRunning = true;
     applyMode();
     btnPomo.textContent = "⏸";
+    document.body.classList.add("os-active");
+    showModeHud("FOCUS\n開始");
   } else {
     // 暫停 / 繼續
     pomoRunning = !pomoRunning;
@@ -625,8 +884,10 @@ btnPomo.addEventListener("click", () => {
 // Mode：在番茄模式中切換 FOCUS / BREAK
 btnMode.addEventListener("click", () => {
   mode = (mode === "FOCUS") ? "BREAK" : "FOCUS";
-  if (pomoActive) applyMode();
-  showToast(mode === "FOCUS" ? "FOCUS" : "BREAK");
+  if (pomoActive) {
+    applyMode();
+    showModeHud(mode === "FOCUS" ? "FOCUS\n開始" : "BREAK\n開始");
+  }
 });
 
 // ⚡ 重生宇宙
