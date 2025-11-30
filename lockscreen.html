@@ -1,6 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <style>
+  /* 手機版調整 */
+  @media (max-width: 768px) {
+    #timeline {
+      height: 90px;
+      font-size: 12px;
+    }
+    #overlay {
+      font-size: 52px;
+    }
+    #help {
+      font-size: 11px;
+      bottom: 70px; /* 讓出下面給按鈕 */
+    }
+    #toast {
+      font-size: 20px;
+      padding: 12px 18px;
+    }
+    #mobileControls {
+      display: flex;
+    }
+  }
+
+  /* 桌機隱藏手機按鈕 */
+  #mobileControls {
+    display: none;
+  }
+
+  #mobileControls button {
+    border: none;
+    padding: 8px 10px;
+    margin: 0 4px;
+    border-radius: 6px;
+    background: rgba(20, 30, 60, 0.9);
+    color: #e0e6ff;
+    font-family: monospace;
+    font-size: 13px;
+  }
+
+  #mobileControls button:active {
+    transform: scale(0.96);
+  }
+</style>
+
   <meta charset="utf-8" />
   <title>Conway Study OS</title>
 
@@ -13,6 +57,18 @@
 <body style="margin:0; overflow:hidden; background:#0a0a15;">
 
 <canvas id="c"></canvas>
+<!-- 手機控制按鈕（只在小螢幕顯示） -->
+<div id="mobileControls"
+     style="position:fixed; bottom:15px; right:10px;
+            padding:6px 8px; background:rgba(0,0,0,0.4);
+            backdrop-filter:blur(6px); border-radius:10px;
+            z-index:150;">
+  <button onclick="mobileCmd('p')">▶︎/⏸ Pomo</button>
+  <button onclick="mobileCmd('n')">Next</button>
+  <button onclick="mobileCmd('t')">Plan</button>
+  <button onclick="mobileCmd('r')">⚡</button>
+</div>
+
 
 <!-- 上方：時間軸 -->
 <div id="timeline"
@@ -453,6 +509,14 @@ window.addEventListener("keydown", e => {
 
 canvas.addEventListener("mousedown", () => canvas.focus());
 window.addEventListener("load",     () => canvas.focus());
+
+  function mobileCmd(key) {
+    // 直接模擬一次 keydown，重用原本的快捷鍵處理邏輯
+    const e = new KeyboardEvent("keydown", { key });
+    window.dispatchEvent(e);
+  }
+</script>
+
 </script>
 </body>
 </html>
