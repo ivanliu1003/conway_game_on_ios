@@ -32,7 +32,7 @@
       top: calc(env(safe-area-inset-top, 8px) + 8px);
       bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); /* 留給 toolbar */
       left: 4px;
-      width: 70px;
+      width: 140px;
       z-index: 10;
       pointer-events: none;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -448,7 +448,7 @@ function renderTimeline() {
   const eMin   = timeToMin(SLEEP_TIME);
   const total  = (eMin - sMin) || 1;
 
-  // 垂直 bar
+  // 垂直主幹
   const bar = document.createElement("div");
   bar.style.position = "absolute";
   bar.style.left = "32px";
@@ -460,30 +460,44 @@ function renderTimeline() {
   bar.style.border = "1px solid rgba(120,140,255,0.8)";
   div.appendChild(bar);
 
-  // 行程區塊
+  // 行程區塊 + 右側完整標籤
   schedule.forEach(blk => {
     const st = timeToMin(blk.start);
     const ed = timeToMin(blk.end);
-    const top  = (st - sMin) / total * 100;
-    const height = (ed - st) / total * 100;
+    const topPct  = (st - sMin) / total * 100;
+    const heightPct = (ed - st) / total * 100;
 
+    // 藍色區塊（在時間線上）
     const seg = document.createElement("div");
     seg.style.position = "absolute";
     seg.style.left = "0";
     seg.style.width = "100%";
-    seg.style.top = top + "%";
-    seg.style.height = height + "%";
+    seg.style.top = topPct + "%";
+    seg.style.height = heightPct + "%";
     seg.style.borderRadius = "999px";
     seg.style.background = "rgba(120,160,255,0.45)";
     bar.appendChild(seg);
+
+    // 右邊文字：完整時間＋標題
+    const midPct = (st + ed - 2*sMin) / (2*total) * 100; // 區塊中間
+    const lab = document.createElement("div");
+    lab.textContent = `${blk.start}-${blk.end} ${blk.label}`;
+    lab.style.position = "absolute";
+    lab.style.left = "50px";        // 時間線右邊一點
+    lab.style.top = midPct + "%";
+    lab.style.transform = "translateY(-50%)";
+    lab.style.fontSize = "11px";
+    lab.style.whiteSpace = "nowrap";
+    lab.style.textShadow = "0 0 6px rgba(0,0,0,0.7)";
+    div.appendChild(lab);
   });
 
-  // 現在時間 marker（跟著往下滑的小圓點）
+  // 現在時間 marker（小白點）
   if (nowMin >= sMin && nowMin <= eMin) {
     const nowPct = (nowMin - sMin) / total * 100;
     const mk = document.createElement("div");
     mk.style.position = "absolute";
-    mk.style.left = "50%";
+    mk.style.left = "37px";
     mk.style.top = nowPct + "%";
     mk.style.transform = "translate(-50%, -50%)";
     mk.style.width = "14px";
@@ -491,10 +505,10 @@ function renderTimeline() {
     mk.style.borderRadius = "50%";
     mk.style.background = "#fff";
     mk.style.boxShadow = "0 0 8px #fff";
-    bar.appendChild(mk);
+    div.appendChild(mk);
   }
 
-  // 左邊標時間（只顯示起點 / 中間 / 終點，避免塞爆）
+  // 左側刻度（起床 / 中間 / 睡覺時間）
   const labels = document.createElement("div");
   labels.style.position = "absolute";
   labels.style.left = "0";
