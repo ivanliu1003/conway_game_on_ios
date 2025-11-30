@@ -26,6 +26,19 @@
       inset: 0;
     }
 
+    /* 左側直向時間線容器 */
+    #timeline {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 8px) + 8px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); /* 留給 toolbar */
+      left: 4px;
+      width: 70px;
+      z-index: 10;
+      pointer-events: none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: #d0d8ff;
+    }
+
     /* 顯示目前這一段行程（小膠囊） */
     #currentBlock {
       position: fixed;
@@ -38,24 +51,11 @@
       border: 1px solid rgba(120,140,255,0.5);
       font-size: 13px;
       z-index: 11;
-      max-width: 90%;
+      max-width: 80%;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    /* 手機版時間線（簡化版） */
-    #timeline {
-      position: fixed;
-      top: calc(env(safe-area-inset-top, 8px) + 36px);
-      left: 0;
-      width: 100%;
-      height: 56px;
-      z-index: 10;
-      pointer-events: none;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      color: #d0d8ff;
     }
 
     /* 中央資訊區 */
@@ -220,7 +220,7 @@
 <!-- 顯示目前這一段行程 -->
 <div id="currentBlock"></div>
 
-<!-- 簡化版時間線 -->
+<!-- 左側直向時間線 -->
 <div id="timeline"></div>
 
 <!-- 中央時間 / 番茄模式 -->
@@ -261,7 +261,7 @@
 const canvas = document.getElementById("bg");
 const ctx = canvas.getContext("2d");
 
-const centerMode = document.getElementElementById?.("centerMode") || document.getElementById("centerMode");
+const centerMode = document.getElementById("centerMode");
 const centerMain = document.getElementById("centerMain");
 const centerSub  = document.getElementById("centerSub");
 const currentBlockDiv = document.getElementById("currentBlock");
@@ -437,7 +437,7 @@ function updateCurrentBlock() {
   }
 }
 
-/* ========== 手機版時間線渲染 ========== */
+/* ========== 左側直向時間線渲染 ========== */
 function renderTimeline() {
   const div = timelineDiv;
   div.innerHTML = "";
@@ -448,68 +448,43 @@ function renderTimeline() {
   const eMin   = timeToMin(SLEEP_TIME);
   const total  = (eMin - sMin) || 1;
 
-  // 容器
-  const wrap = document.createElement("div");
-  wrap.style.width = "92%";
-  wrap.style.margin = "0 auto";
-  wrap.style.marginTop = "4px";
-  div.appendChild(wrap);
-
-  // 時間刻度（簡化，只顯示起點 / 中間 / 終點）
-  const ticks = document.createElement("div");
-  ticks.style.display = "flex";
-  ticks.style.justifyContent = "space-between";
-  ticks.style.fontSize = "11px";
-  ticks.style.opacity = "0.85";
-
-  const midMin = sMin + total/2;
-  const labels = [
-    WAKE_TIME,
-    `${String(Math.floor(midMin/60)).padStart(2,"0")}:00`,
-    SLEEP_TIME
-  ];
-  labels.forEach(t=>{
-    const d = document.createElement("div");
-    d.textContent = t;
-    ticks.appendChild(d);
-  });
-  wrap.appendChild(ticks);
-
-  // bar
+  // 垂直 bar
   const bar = document.createElement("div");
-  bar.style.position = "relative";
-  bar.style.marginTop = "4px";
-  bar.style.height = "18px";
-  bar.style.width = "100%";
+  bar.style.position = "absolute";
+  bar.style.left = "32px";
+  bar.style.top = "8px";
+  bar.style.bottom = "8px";
+  bar.style.width = "10px";
   bar.style.borderRadius = "999px";
   bar.style.background = "rgba(10,15,45,0.96)";
-  bar.style.border = "1px solid rgba(120,140,255,0.6)";
-  wrap.appendChild(bar);
+  bar.style.border = "1px solid rgba(120,140,255,0.8)";
+  div.appendChild(bar);
 
   // 行程區塊
-  schedule.forEach(blk=>{
+  schedule.forEach(blk => {
     const st = timeToMin(blk.start);
     const ed = timeToMin(blk.end);
-    const left  = (st - sMin) / total * 100;
-    const width = (ed - st) / total * 100;
+    const top  = (st - sMin) / total * 100;
+    const height = (ed - st) / total * 100;
 
     const seg = document.createElement("div");
     seg.style.position = "absolute";
-    seg.style.left = left + "%";
-    seg.style.width = width + "%";
-    seg.style.height = "100%";
+    seg.style.left = "0";
+    seg.style.width = "100%";
+    seg.style.top = top + "%";
+    seg.style.height = height + "%";
     seg.style.borderRadius = "999px";
-    seg.style.background = "rgba(120,160,255,0.4)";
+    seg.style.background = "rgba(120,160,255,0.45)";
     bar.appendChild(seg);
   });
 
-  // 現在時間 marker（小圓點）
+  // 現在時間 marker（跟著往下滑的小圓點）
   if (nowMin >= sMin && nowMin <= eMin) {
-    const nowX = (nowMin - sMin) / total * 100;
+    const nowPct = (nowMin - sMin) / total * 100;
     const mk = document.createElement("div");
     mk.style.position = "absolute";
-    mk.style.left = nowX + "%";
-    mk.style.top = "50%";
+    mk.style.left = "50%";
+    mk.style.top = nowPct + "%";
     mk.style.transform = "translate(-50%, -50%)";
     mk.style.width = "14px";
     mk.style.height = "14px";
@@ -518,6 +493,34 @@ function renderTimeline() {
     mk.style.boxShadow = "0 0 8px #fff";
     bar.appendChild(mk);
   }
+
+  // 左邊標時間（只顯示起點 / 中間 / 終點，避免塞爆）
+  const labels = document.createElement("div");
+  labels.style.position = "absolute";
+  labels.style.left = "0";
+  labels.style.top = "0";
+  labels.style.bottom = "0";
+  labels.style.width = "100%";
+  labels.style.fontSize = "11px";
+  labels.style.color = "#d0d8ff";
+  div.appendChild(labels);
+
+  const points = [
+    { t: sMin,          text: WAKE_TIME },
+    { t: sMin + total/2, text: `${String(Math.floor((sMin+total/2)/60)).padStart(2,"0")}:00` },
+    { t: eMin,          text: SLEEP_TIME }
+  ];
+
+  points.forEach(p => {
+    const yPct = (p.t - sMin) / total * 100;
+    const lab = document.createElement("div");
+    lab.textContent = p.text;
+    lab.style.position = "absolute";
+    lab.style.left = "0";
+    lab.style.top = yPct + "%";
+    lab.style.transform = "translateY(-50%)";
+    labels.appendChild(lab);
+  });
 }
 
 /* ========== 中央顯示 ========== */
