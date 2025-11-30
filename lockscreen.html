@@ -1,74 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-  /* 手機版調整 */
-  @media (max-width: 768px) {
-    #timeline {
-      height: 90px;
-      font-size: 12px;
-    }
-    #overlay {
-      font-size: 52px;
-    }
-    #help {
-      font-size: 11px;
-      bottom: 70px; /* 讓出下面給按鈕 */
-    }
-    #toast {
-      font-size: 20px;
-      padding: 12px 18px;
-    }
-    #mobileControls {
-      display: flex;
-    }
-  }
-
-  /* 桌機隱藏手機按鈕 */
-  #mobileControls {
-    display: none;
-  }
-
-  #mobileControls button {
-    border: none;
-    padding: 8px 10px;
-    margin: 0 4px;
-    border-radius: 6px;
-    background: rgba(20, 30, 60, 0.9);
-    color: #e0e6ff;
-    font-family: monospace;
-    font-size: 13px;
-  }
-
-  #mobileControls button:active {
-    transform: scale(0.96);
-  }
-</style>
-
   <meta charset="utf-8" />
   <title>Conway Study OS</title>
 
-  <!-- iOS / 手機顯示友善 -->
+  <!-- 手機 / iOS 顯示相關 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StudyOS">
-</head>
-<body style="margin:0; overflow:hidden; background:#0a0a15;">
 
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0a0a15;
+    }
+
+    /* 手機版調整 */
+    @media (max-width: 768px) {
+      #timeline {
+        height: 90px;
+        font-size: 12px;
+      }
+      #overlay {
+        font-size: 52px;
+      }
+      #help {
+        font-size: 11px;
+        bottom: 70px; /* 讓下面可以放按鈕列 */
+      }
+      #toast {
+        font-size: 20px;
+        padding: 12px 18px;
+      }
+      #mobileControls {
+        display: flex !important;
+        gap: 6px;
+      }
+    }
+
+    /* 手機控制按鈕預設隱藏（只在 media query 顯示） */
+    #mobileControls {
+      display: none;
+    }
+
+    #mobileControls button {
+      border: none;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: rgba(20, 30, 60, 0.9);
+      color: #e0e6ff;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    #mobileControls button:active {
+      transform: scale(0.96);
+    }
+  </style>
+</head>
+<body>
 <canvas id="c"></canvas>
-<!-- 手機控制按鈕（只在小螢幕顯示） -->
+
+<!-- 手機控制按鈕列（右下角） -->
 <div id="mobileControls"
      style="position:fixed; bottom:15px; right:10px;
-            padding:6px 8px; background:rgba(0,0,0,0.4);
+            padding:8px 10px; background:rgba(0,0,0,0.4);
             backdrop-filter:blur(6px); border-radius:10px;
             z-index:150;">
-  <button onclick="mobileCmd('p')">▶︎/⏸ Pomo</button>
+  <button onclick="mobileCmd('p')">▶︎/⏸</button>
   <button onclick="mobileCmd('n')">Next</button>
   <button onclick="mobileCmd('t')">Plan</button>
   <button onclick="mobileCmd('r')">⚡</button>
 </div>
-
 
 <!-- 上方：時間軸 -->
 <div id="timeline"
@@ -124,7 +129,7 @@
 </div>
 
 <script>
-/* ========== 基本 DOM ========== */
+/* ========= 基本 DOM ========= */
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 canvas.setAttribute("tabindex", "0");
@@ -136,7 +141,7 @@ const panel = document.getElementById("editPanel");
 const area  = document.getElementById("editArea");
 const toast = document.getElementById("toast");
 
-/* ========== Conway 生命遊戲 ========== */
+/* ========= Conway 生命遊戲 ========= */
 const cellSize = 7;
 let cols, rows;
 let grid = [];
@@ -157,13 +162,12 @@ function randomGrid() {
     Array.from({length: cols}, () => Math.random() > 0.82 ? 1 : 0)
   );
 }
-
 resize();
 
-// freeze 檢測 + 永動模式
+// freeze 檢測 + 永動
 let freezeCounter = 0;
-let lastGridHash = "";
-let lastSeedTime = Date.now();
+let lastGridHash  = "";
+let lastSeedTime  = Date.now();
 const seedInterval = 10000; // 10 秒
 
 function gridHash() {
@@ -171,8 +175,8 @@ function gridHash() {
 }
 
 function injectSeeds() {
-  // 稍微多灑一點，肉眼看得出來有變化
-  for (let i = 0; i < 222; i++) {
+  // 多撒一些，看得出有在長
+  for (let i = 0; i < 80; i++) {
     const x = Math.floor(Math.random() * cols);
     const y = Math.floor(Math.random() * rows);
     grid[y][x] = 1;
@@ -203,14 +207,14 @@ function nextGen() {
   }
 }
 
-/* ========== 番茄鐘 ========== */
+/* ========= 番茄鐘 ========= */
 let focusMinutes = 25;
 let breakMinutes = 5;
 
 let mode = "FOCUS";
 let secondsLeft = focusMinutes * 60;
 let pomoRunning = false;
-let pomoActive  = false; // ★ 新增：是否顯示番茄模式
+let pomoActive  = false; // 沒啟動時顯示現在時間
 
 function applyMode() {
   secondsLeft = (mode === "FOCUS" ? focusMinutes : breakMinutes) * 60;
@@ -226,7 +230,7 @@ setInterval(() => {
   }
 }, 1000);
 
-/* ========== Timeline & 行程 ========== */
+/* ========= Timeline & 行程 ========= */
 let WAKE_TIME  = localStorage.wakeTime  || "07:00";
 let SLEEP_TIME = localStorage.sleepTime || "23:00";
 
@@ -240,7 +244,7 @@ if (localStorage.timeline) {
   try { schedule = JSON.parse(localStorage.timeline); } catch(e){}
 }
 
-function timeToMin(t){
+function timeToMin(t) {
   const [h,m] = t.split(":").map(Number);
   return h*60+m;
 }
@@ -270,7 +274,7 @@ function renderTimeline() {
   const eMin   = timeToMin(SLEEP_TIME);
   const total  = (eMin - sMin) || 1;
 
-  // 時段切換提示
+  // 決定現在在哪個行程區塊
   let current = null;
   for (let blk of schedule) {
     if (nowMin >= timeToMin(blk.start) && nowMin < timeToMin(blk.end)) {
@@ -312,7 +316,7 @@ function renderTimeline() {
   bar.style.borderRadius = "6px";
   div.appendChild(bar);
 
-  // 時段區塊
+  // 行程區塊
   for (let blk of schedule) {
     const st = timeToMin(blk.start);
     const ed = timeToMin(blk.end);
@@ -334,24 +338,26 @@ function renderTimeline() {
     bar.appendChild(b);
   }
 
-  // NOW marker
+  // NOW marker 換成你的頭像
   if (nowMin >= sMin && nowMin <= eMin) {
     const nowX = (nowMin - sMin)/total*100;
-    const mk = document.createElement("div");
+    const mk = document.createElement("img");
+    mk.src = "assets/avatar.png";   // ← 放你的頭像檔案
+    mk.alt = "you";
     mk.style.position = "absolute";
     mk.style.left = nowX + "%";
-    mk.style.top = "17px";
+    mk.style.top = "5px";
     mk.style.transform = "translateX(-50%)";
-    mk.style.width = "14px";
-    mk.style.height = "14px";
+    mk.style.width = "32px";
+    mk.style.height = "32px";
     mk.style.borderRadius = "50%";
-    mk.style.background = "#fff";
+    mk.style.objectFit = "cover";
     mk.style.boxShadow = "0 0 10px #fff";
     bar.appendChild(mk);
   }
 }
 
-/* ========== 行程編輯器 ========== */
+/* ========= 行程編輯器 ========= */
 function openEditor(){
   area.value = schedule.map(x=>`${x.start}-${x.end} ${x.label}`).join("\n");
   panel.style.display = "block";
@@ -373,7 +379,7 @@ function saveSchedule(){
   closeEditor();
 }
 
-/* ========== 繪圖 / UI 更新 ========== */
+/* ========= 畫面更新 ========= */
 function drawConway(){
   ctx.fillStyle = "#0a0a15";
   ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -391,12 +397,10 @@ function updateOverlay(){
   const mm = String(now.getMinutes()).padStart(2,"0");
 
   if (!pomoActive) {
-    // 一般模式：顯示現在時間
     overlay.innerHTML =
       `<div style="font-size:40px; margin-bottom:10px;">TIME</div>`+
       `<div>${hh}:${mm}</div>`;
   } else {
-    // 番茄模式：顯示 FOCUS/BREAK 倒數
     const m = String(Math.floor(secondsLeft/60)).padStart(2,"0");
     const s = String(secondsLeft%60).padStart(2,"0");
     overlay.innerHTML =
@@ -410,15 +414,14 @@ function updateOverlay(){
     "[R] 重生宇宙  [1/2/3] Conway 速度  [T] 編輯時間軸  Alt+F4 離開";
 }
 
-/* ========== 主 loop ========== */
+/* ========= 主迴圈 ========= */
 function mainLoop(){
   frame++;
 
-  if (frame % (4-speed) === 0) {
+  if (frame % (4 - speed) === 0) {
     nextGen();
   }
 
-  // 每 10 秒灑一次種子（保證一定走）
   const now = Date.now();
   if (now - lastSeedTime >= seedInterval) {
     injectSeeds();
@@ -433,9 +436,9 @@ function mainLoop(){
 }
 mainLoop();
 
-/* ========== 鍵盤事件 ========== */
+/* ========= 鍵盤事件 ========= */
 window.addEventListener("keydown", e => {
-  // 編輯器開啟時
+  // 編輯器開啟時：處理 Ctrl+Enter / Esc
   if (panel.style.display === "block") {
     if (e.ctrlKey && e.key === "Enter") {
       e.preventDefault();
@@ -454,17 +457,14 @@ window.addEventListener("keydown", e => {
 
   if (e.key === "p" || e.key === "P") {
     if (!pomoActive) {
-      // 第一次 P：啟動番茄模式
       pomoActive = true;
       pomoRunning = true;
       applyMode();
     } else {
-      // 之後 P：暫停/繼續
       pomoRunning = !pomoRunning;
     }
   }
   else if (e.key === "o" || e.key === "O") {
-    // 關閉番茄顯示，回到 TIME
     pomoActive = false;
     pomoRunning = false;
   }
@@ -507,16 +507,14 @@ window.addEventListener("keydown", e => {
   }
 });
 
+/* ========= 手機按鈕 → 模擬鍵盤 ========= */
+function mobileCmd(key) {
+  const e = new KeyboardEvent("keydown", { key });
+  window.dispatchEvent(e);
+}
+
 canvas.addEventListener("mousedown", () => canvas.focus());
-window.addEventListener("load",     () => canvas.focus());
-
-  function mobileCmd(key) {
-    // 直接模擬一次 keydown，重用原本的快捷鍵處理邏輯
-    const e = new KeyboardEvent("keydown", { key });
-    window.dispatchEvent(e);
-  }
-</script>
-
+window.addEventListener("load", () => canvas.focus());
 </script>
 </body>
 </html>
