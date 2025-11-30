@@ -26,6 +26,38 @@
       inset: 0;
     }
 
+    /* 顯示目前這一段行程（小膠囊） */
+    #currentBlock {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 8px));
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(5,10,30,0.8);
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(120,140,255,0.5);
+      font-size: 13px;
+      z-index: 11;
+      max-width: 90%;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 手機版時間線（簡化版） */
+    #timeline {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 8px) + 36px);
+      left: 0;
+      width: 100%;
+      height: 56px;
+      z-index: 10;
+      pointer-events: none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: #d0d8ff;
+    }
+
     /* 中央資訊區 */
     #center {
       position: fixed;
@@ -34,7 +66,7 @@
       transform: translate(-50%, -50%);
       text-align: center;
       text-shadow: 0 0 18px rgba(0,0,0,0.8);
-      z-index: 10;
+      z-index: 9;
       padding: 0 16px;
     }
     #center .mode {
@@ -51,25 +83,6 @@
     #center .sub {
       font-size: 16px;
       opacity: 0.85;
-    }
-
-    /* 上方顯示「現在這一段行程」 */
-    #currentBlock {
-      position: fixed;
-      top: env(safe-area-inset-top, 12px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(5,10,30,0.8);
-      padding: 6px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(120,140,255,0.5);
-      font-size: 14px;
-      z-index: 10;
-      max-width: 90%;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     /* 下方控制列 */
@@ -207,6 +220,9 @@
 <!-- 顯示目前這一段行程 -->
 <div id="currentBlock"></div>
 
+<!-- 簡化版時間線 -->
+<div id="timeline"></div>
+
 <!-- 中央時間 / 番茄模式 -->
 <div id="center">
   <div class="mode" id="centerMode">TIME</div>
@@ -245,10 +261,11 @@
 const canvas = document.getElementById("bg");
 const ctx = canvas.getContext("2d");
 
-const centerMode = document.getElementById("centerMode");
+const centerMode = document.getElementElementById?.("centerMode") || document.getElementById("centerMode");
 const centerMain = document.getElementById("centerMain");
 const centerSub  = document.getElementById("centerSub");
 const currentBlockDiv = document.getElementById("currentBlock");
+const timelineDiv = document.getElementById("timeline");
 
 const btnPomo     = document.getElementById("btnPomo");
 const btnMode     = document.getElementById("btnMode");
@@ -420,6 +437,89 @@ function updateCurrentBlock() {
   }
 }
 
+/* ========== 手機版時間線渲染 ========== */
+function renderTimeline() {
+  const div = timelineDiv;
+  div.innerHTML = "";
+
+  const nowStr = new Date().toTimeString().slice(0,5);
+  const nowMin = timeToMin(nowStr);
+  const sMin   = timeToMin(WAKE_TIME);
+  const eMin   = timeToMin(SLEEP_TIME);
+  const total  = (eMin - sMin) || 1;
+
+  // 容器
+  const wrap = document.createElement("div");
+  wrap.style.width = "92%";
+  wrap.style.margin = "0 auto";
+  wrap.style.marginTop = "4px";
+  div.appendChild(wrap);
+
+  // 時間刻度（簡化，只顯示起點 / 中間 / 終點）
+  const ticks = document.createElement("div");
+  ticks.style.display = "flex";
+  ticks.style.justifyContent = "space-between";
+  ticks.style.fontSize = "11px";
+  ticks.style.opacity = "0.85";
+
+  const midMin = sMin + total/2;
+  const labels = [
+    WAKE_TIME,
+    `${String(Math.floor(midMin/60)).padStart(2,"0")}:00`,
+    SLEEP_TIME
+  ];
+  labels.forEach(t=>{
+    const d = document.createElement("div");
+    d.textContent = t;
+    ticks.appendChild(d);
+  });
+  wrap.appendChild(ticks);
+
+  // bar
+  const bar = document.createElement("div");
+  bar.style.position = "relative";
+  bar.style.marginTop = "4px";
+  bar.style.height = "18px";
+  bar.style.width = "100%";
+  bar.style.borderRadius = "999px";
+  bar.style.background = "rgba(10,15,45,0.96)";
+  bar.style.border = "1px solid rgba(120,140,255,0.6)";
+  wrap.appendChild(bar);
+
+  // 行程區塊
+  schedule.forEach(blk=>{
+    const st = timeToMin(blk.start);
+    const ed = timeToMin(blk.end);
+    const left  = (st - sMin) / total * 100;
+    const width = (ed - st) / total * 100;
+
+    const seg = document.createElement("div");
+    seg.style.position = "absolute";
+    seg.style.left = left + "%";
+    seg.style.width = width + "%";
+    seg.style.height = "100%";
+    seg.style.borderRadius = "999px";
+    seg.style.background = "rgba(120,160,255,0.4)";
+    bar.appendChild(seg);
+  });
+
+  // 現在時間 marker（小圓點）
+  if (nowMin >= sMin && nowMin <= eMin) {
+    const nowX = (nowMin - sMin) / total * 100;
+    const mk = document.createElement("div");
+    mk.style.position = "absolute";
+    mk.style.left = nowX + "%";
+    mk.style.top = "50%";
+    mk.style.transform = "translate(-50%, -50%)";
+    mk.style.width = "14px";
+    mk.style.height = "14px";
+    mk.style.borderRadius = "50%";
+    mk.style.background = "#fff";
+    mk.style.boxShadow = "0 0 8px #fff";
+    bar.appendChild(mk);
+  }
+}
+
 /* ========== 中央顯示 ========== */
 function updateCenter() {
   const now = new Date();
@@ -431,9 +531,9 @@ function updateCenter() {
     centerMain.textContent = `${hh}:${mm}`;
     centerSub.textContent  = "";
   } else {
-    centerMode.textContent = mode;
     const m = String(Math.floor(secondsLeft/60)).padStart(2,"0");
     const s = String(secondsLeft%60).padStart(2,"0");
+    centerMode.textContent = mode;
     centerMain.textContent = `${m}:${s}`;
     centerSub.textContent  = (mode==="FOCUS" ? "專注中" : "休息中");
   }
@@ -456,6 +556,7 @@ function mainLoop() {
   drawConway();
   updateCenter();
   updateCurrentBlock();
+  renderTimeline();
 
   requestAnimationFrame(mainLoop);
 }
@@ -500,7 +601,7 @@ btnPomo.addEventListener("click", () => {
   } else {
     // 暫停 / 繼續
     pomoRunning = !pomoRunning;
-    btnPomo.textContent = pomoRunning ? "⏸" : "▶︎";
+    btnPomo.textContent = pomoRunning ? "⏸" : "▶︎ Pomo";
   }
 });
 
@@ -517,7 +618,7 @@ btnUniverse.addEventListener("click", () => {
   showToast("新宇宙 ⚡");
 });
 
-// 讓點擊畫面不會把焦點亂跑
+// 防止點擊讓畫面選取之類的怪事
 canvas.addEventListener("mousedown", e => e.preventDefault());
 canvas.addEventListener("touchstart", e => e.preventDefault(), {passive:false});
 </script>
