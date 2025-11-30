@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>HabitOS — Study Star</title>
+  <title>HabitOS — Star Tracker</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,78 +25,132 @@
       z-index: 0;
     }
 
-    /* 上方：最近 28 天的小星星 */
-    #history {
+    /* 語錄區 */
+    #quoteBox {
       position: fixed;
       top: calc(env(safe-area-inset-top, 10px) + 8px);
       left: 12px;
       right: 12px;
-      z-index: 5;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 11px;
-      color: #9ca8ff;
-    }
-    #historyLabel {
-      opacity: 0.8;
-    }
-    #historyBar {
-      display: grid;
-      grid-template-columns: repeat(14, 1fr);
-      gap: 4px;
-    }
-    .historyDay {
-      width: 14px;
-      height: 14px;
-      border-radius: 4px;
-      background: #1b2035;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      color: #4f5a88;
-    }
-    .historyDay.active {
-      background: #ffd95c;
-      color: #5a4100;
-      box-shadow: 0 0 8px #ffd95c;
-    }
-
-    /* 中間大星星 */
-    #center {
-      position: fixed;
-      top: 52%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(10, 10, 30, 0.86);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(120,140,255,0.6);
+      font-size: 13px;
       z-index: 5;
       text-align: center;
-      text-shadow: 0 0 12px rgba(0,0,0,0.7);
-      padding: 0 20px;
+    }
+    #quoteText {
+      opacity: 0.9;
     }
 
-    #bigStar {
-      font-size: 96px;
+    /* 習慣列表 */
+    #habitList {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 10px) + 60px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+      left: 0;
+      right: 0;
+      padding: 8px 10px 8px 10px;
+      overflow-y: auto;
+      z-index: 5;
+    }
+
+    .habitCard {
+      background: rgba(10, 12, 30, 0.9);
+      border-radius: 12px;
+      border: 1px solid rgba(80, 90, 150, 0.7);
+      padding: 10px 12px;
       margin-bottom: 8px;
-      transition: transform 0.2s ease-out, text-shadow 0.2s ease-out, color 0.2s ease-out;
+      box-shadow: 0 0 14px rgba(0,0,0,0.4);
+    }
+
+    .habitHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .habitName {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .habitStreak {
+      font-size: 11px;
+      color: #ffc96a;
+    }
+
+    .habitDesc {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 6px;
+    }
+
+    .habitMainRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .bigStar {
+      font-size: 32px;
+      cursor: pointer;
+      transition: transform 0.2s ease-out, text-shadow 0.2s, color 0.2s;
       color: #3b3f55;
     }
-    #bigStar.done {
+
+    .bigStar.done {
       color: #ffd95c;
-      text-shadow: 0 0 20px rgba(255,217,92,0.9);
+      text-shadow: 0 0 16px rgba(255,217,92,0.9);
       transform: scale(1.05);
     }
 
-    #centerTextMain {
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-    #centerTextSub {
-      font-size: 13px;
-      opacity: 0.85;
+    .toggleBtn {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #2d5bff;
+      color: #e5e9ff;
+      font-size: 12px;
+      font-family: inherit;
+      min-width: 90px;
     }
 
-    /* 下方按鈕列 */
+    .editBtn {
+      border: none;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #202546;
+      color: #b9c0ff;
+      font-size: 10px;
+      font-family: inherit;
+    }
+
+    .toggleBtn:active,
+    .editBtn:active {
+      transform: scale(0.96);
+    }
+
+    .miniHistory {
+      display: flex;
+      gap: 3px;
+      margin-top: 2px;
+    }
+    .miniDot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: #1b2035;
+    }
+    .miniDot.done {
+      background: #4fa3ff;
+      box-shadow: 0 0 5px #4fa3ff;
+    }
+
+    /* 底部工具列 */
     #toolbar {
       position: fixed;
       bottom: env(safe-area-inset-bottom, 0px);
@@ -118,19 +172,19 @@
       box-shadow: 0 0 18px rgba(0,0,0,0.7);
     }
 
-    button {
+    .toolBtn {
       border: none;
       border-radius: 999px;
-      padding: 8px 14px;
+      padding: 7px 12px;
       background: #1b2355;
       color: #e5e9ff;
-      font-size: 13px;
+      font-size: 12px;
       font-family: inherit;
-      min-width: 72px;
+      min-width: 70px;
     }
-    button.primary { background: #2d5bff; }
-    button.danger { background: #ff4b7a; }
-    button:active { transform: scale(0.96); }
+    .toolBtn.primary { background: #2d5bff; }
+    .toolBtn.danger { background: #ff4b7a; }
+    .toolBtn:active { transform: scale(0.96); }
 
     /* HUD */
     #hud {
@@ -138,16 +192,16 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      padding: 16px 22px;
+      padding: 14px 20px;
       background: white;
       color: #000;
       font-family: ui-monospace, monospace;
       border-radius: 10px;
-      box-shadow: 0 0 20px rgba(255,255,255,0.9);
+      box-shadow: 0 0 18px rgba(255,255,255,0.9);
       opacity: 0;
       z-index: 20;
-      transition: opacity 0.3s ease-out;
-      font-size: 18px;
+      transition: opacity 0.25s ease-out;
+      font-size: 16px;
       white-space: pre-line;
       text-align: center;
     }
@@ -157,48 +211,74 @@
 
 <canvas id="bg"></canvas>
 
-<!-- 歷史紀錄 -->
-<div id="history">
-  <div id="historyLabel">最近 28 天</div>
-  <div id="historyBar"></div>
+<!-- 勵志語錄 -->
+<div id="quoteBox">
+  <div id="quoteText"></div>
 </div>
 
-<!-- 中間大星星 -->
-<div id="center">
-  <div id="bigStar">★</div>
-  <div id="centerTextMain" id="titleText">讀書習慣</div>
-  <div id="centerTextSub" id="subText">每天讀滿 2 小時就點亮這顆星</div>
-</div>
+<!-- 多習慣列表 -->
+<div id="habitList"></div>
 
 <!-- HUD -->
 <div id="hud"></div>
 
-<!-- 底部按鈕列 -->
+<!-- 工具列 -->
 <div id="toolbar">
   <div id="toolbarInner">
-    <button class="primary" id="btnToggle">今天完成了 ✅</button>
-    <button id="btnNote">設定說明</button>
-    <button class="danger" id="btnUniverse">⚡</button>
+    <button class="toolBtn primary" id="btnAddHabit">新增習慣</button>
+    <button class="toolBtn" id="btnNewQuote">換一句</button>
+    <button class="toolBtn danger" id="btnUniverse">⚡</button>
   </div>
 </div>
 
 <script>
-/* ========= 基本 state ========= */
-const bigStar = document.getElementById("bigStar");
-const hud     = document.getElementById("hud");
-const historyBar = document.getElementById("historyBar");
-const btnToggle  = document.getElementById("btnToggle");
-const btnNote    = document.getElementById("btnNote");
-const btnUniverse= document.getElementById("btnUniverse");
+/* ========= 語錄 ========= */
+const QUOTES = [
+  "今天做的每一題，都是在幫未來的自己還債。",
+  "不是你不夠聰明，是你還不夠穩定地坐下來。",
+  "先求有，再求好；先開始，再完美。",
+  "你現在偷的懶，未來都會用更硬的方式還回來。",
+  "專注一小時，比分心三小時有用多了。",
+  "別跟別人比，先把昨天的自己打爆再說。",
+  "如果一定要熬夜，那就確保它是值得的。",
+  "學習不是為了考試，是為了讓你以後可以選擇。",
+  "你現在啃的每一頁，都是幫你打開一扇門。",
+  "當你不想讀書時，剛好就是最需要讀書的時候。"
+];
 
-const GOAL_DESC_KEY = "habitStarGoalDesc";
-const CAL_KEY       = "habitStarCalendar";
+function pickQuote() {
+  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  document.getElementById("quoteText").textContent = q;
+}
 
-let goalDesc = localStorage[GOAL_DESC_KEY] || "每天讀書至少 2 小時";
-document.getElementById("centerTextSub").textContent = goalDesc;
+/* ========= 習慣資料 ========= */
+const HABITS_KEY = "starHabits_multi";
+const CAL_KEY    = "starHabits_calendar";
 
 function todayKey() {
-  return new Date().toISOString().slice(0,10); // YYYY-MM-DD
+  return new Date().toISOString().slice(0,10);
+}
+
+function loadHabits() {
+  try {
+    const raw = localStorage[HABITS_KEY];
+    if (!raw) {
+      const defaults = [
+        {id:"h1", name:"讀書 2 小時", desc:"只要今天有好好坐下來讀書，就點亮這顆星"},
+        {id:"h2", name:"運動", desc:"哪怕只是 10 分鐘也算"},
+        {id:"h3", name:"早睡", desc:"超過 12 點就不算"}
+      ];
+      localStorage[HABITS_KEY] = JSON.stringify(defaults);
+      return defaults;
+    }
+    return JSON.parse(raw);
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveHabits(list) {
+  localStorage[HABITS_KEY] = JSON.stringify(list);
 }
 
 function loadCalendar() {
@@ -213,92 +293,195 @@ function saveCalendar(cal) {
   localStorage[CAL_KEY] = JSON.stringify(cal);
 }
 
+let habits   = loadHabits();
 let calendar = loadCalendar();
-let doneToday = !!calendar[todayKey()];
 
-/* ========= 更新星星 & 按鈕文字 ========= */
-function updateStarUI() {
-  if (doneToday) {
-    bigStar.classList.add("done");
-    btnToggle.textContent = "取消今天 ❌";
-  } else {
-    bigStar.classList.remove("done");
-    btnToggle.textContent = "今天完成了 ✅";
+/* ========= 工具 ========= */
+function isDone(habitId, dateKey) {
+  const byHabit = calendar[habitId] || {};
+  return !!byHabit[dateKey];
+}
+
+function setDone(habitId, dateKey, value) {
+  if (!calendar[habitId]) calendar[habitId] = {};
+  if (value) calendar[habitId][dateKey] = true;
+  else delete calendar[habitId][dateKey];
+  saveCalendar(calendar);
+}
+
+/* 連續天數 streak */
+function getStreak(habitId) {
+  const byHabit = calendar[habitId] || {};
+  let streak = 0;
+  const now = new Date();
+  for (let i = 0; ; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    if (byHabit[key]) streak++;
+    else break;
   }
+  return streak;
 }
 
 /* ========= HUD ========= */
+const hud = document.getElementById("hud");
 function showHUD(msg) {
   hud.textContent = msg;
   hud.style.opacity = 1;
   setTimeout(()=>hud.style.opacity = 0, 900);
 }
 
-/* ========= 歷史 28 天小格 ========= */
-function renderHistory() {
-  historyBar.innerHTML = "";
-  const now = new Date();
+/* ========= 渲染習慣卡片 ========= */
+const habitListDiv = document.getElementById("habitList");
 
-  for (let i = 27; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const key = d.toISOString().slice(0,10);
+function renderHabits() {
+  habitListDiv.innerHTML = "";
 
-    const box = document.createElement("div");
-    box.className = "historyDay";
-    if (calendar[key]) {
-      box.classList.add("active");
-      box.textContent = "★";
-    } else {
-      box.textContent = "";
+  const today = todayKey();
+
+  habits.forEach(habit => {
+    const card = document.createElement("div");
+    card.className = "habitCard";
+    card.dataset.id = habit.id;
+
+    // header
+    const header = document.createElement("div");
+    header.className = "habitHeader";
+
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "habitName";
+    nameDiv.textContent = habit.name;
+
+    const rightHeader = document.createElement("div");
+
+    const streakDiv = document.createElement("div");
+    streakDiv.className = "habitStreak";
+    const s = getStreak(habit.id);
+    streakDiv.textContent = s > 0 ? `🔥 已連續 ${s} 天` : "還沒開始";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "editBtn";
+    editBtn.textContent = "⋯";
+    editBtn.title = "重新命名 / 刪除";
+
+    rightHeader.appendChild(streakDiv);
+    rightHeader.appendChild(editBtn);
+
+    header.appendChild(nameDiv);
+    header.appendChild(rightHeader);
+    card.appendChild(header);
+
+    // desc
+    const descDiv = document.createElement("div");
+    descDiv.className = "habitDesc";
+    descDiv.textContent = habit.desc || "";
+    card.appendChild(descDiv);
+
+    // main row: star + button
+    const mainRow = document.createElement("div");
+    mainRow.className = "habitMainRow";
+
+    const starSpan = document.createElement("span");
+    starSpan.className = "bigStar";
+    starSpan.textContent = "★";
+    if (isDone(habit.id, today)) starSpan.classList.add("done");
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "toggleBtn";
+    toggleBtn.textContent = isDone(habit.id, today)
+      ? "取消今天"
+      : "今天完成了";
+
+    mainRow.appendChild(starSpan);
+    mainRow.appendChild(toggleBtn);
+    card.appendChild(mainRow);
+
+    // mini history: 最近 7 天
+    const mini = document.createElement("div");
+    mini.className = "miniHistory";
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = d.toISOString().slice(0,10);
+
+      const dot = document.createElement("div");
+      dot.className = "miniDot";
+      if (isDone(habit.id, key)) dot.classList.add("done");
+      mini.appendChild(dot);
     }
-    historyBar.appendChild(box);
-  }
+    card.appendChild(mini);
+
+    habitListDiv.appendChild(card);
+  });
 }
 
-/* ========= 按鈕事件 ========= */
+/* ========= 事件：卡片內點擊 ========= */
+habitListDiv.addEventListener("click", (e) => {
+  const card = e.target.closest(".habitCard");
+  if (!card) return;
+  const id = card.dataset.id;
+  const today = todayKey();
 
-// 點大星星視同切換
-bigStar.addEventListener("click", () => {
-  toggleToday();
-});
+  // 點星星 or 按鈕 → 切換完成狀態
+  if (e.target.classList.contains("bigStar") ||
+      e.target.classList.contains("toggleBtn")) {
 
-// 今天完成 / 取消
-btnToggle.addEventListener("click", () => {
-  toggleToday();
-});
-
-function toggleToday() {
-  doneToday = !doneToday;
-  if (doneToday) {
-    calendar[todayKey()] = true;
-    showHUD("⭐ 已點亮\n今天有讀書");
-  } else {
-    delete calendar[todayKey()];
-    showHUD("已取消今天紀錄");
+    const done = !isDone(id, today);
+    setDone(id, today, done);
+    renderHabits();
+    pickQuote();   // 切換時順便換一句話
+    showHUD(done ? "⭐ 今天完成！" : "已取消今天紀錄");
+    return;
   }
-  saveCalendar(calendar);
-  updateStarUI();
-  renderHistory();
-}
 
-// 說明 / 修改目標描述
-btnNote.addEventListener("click", () => {
-  const text = prompt(
-    "你想用這顆星追蹤什麼習慣？",
-    goalDesc
-  );
-  if (text) {
-    goalDesc = text;
-    localStorage[GOAL_DESC_KEY] = text;
-    document.getElementById("centerTextSub").textContent = goalDesc;
+  // 編輯習慣
+  if (e.target.classList.contains("editBtn")) {
+    const habit = habits.find(h => h.id === id);
+    if (!habit) return;
+    const action = prompt(
+      "輸入新名稱，或輸入 DELETE 刪除此習慣：",
+      habit.name
+    );
+    if (action === null) return;
+    if (action === "DELETE") {
+      if (confirm("確定要刪除這個習慣嗎？歷史紀錄也會一起刪掉。")) {
+        habits = habits.filter(h => h.id !== id);
+        delete calendar[id];
+        saveHabits(habits);
+        saveCalendar(calendar);
+        renderHabits();
+        showHUD("已刪除習慣");
+      }
+    } else {
+      habit.name = action;
+      const newDesc = prompt("可選：更新描述（留空就不改）", habit.desc || "");
+      if (newDesc !== null && newDesc !== "") {
+        habit.desc = newDesc;
+      }
+      saveHabits(habits);
+      renderHabits();
+      showHUD("已更新習慣");
+    }
   }
 });
 
-// ⚡ 重生宇宙（背景）
-btnUniverse.addEventListener("click", () => {
-  randomGrid();
-  showHUD("⚡ 新宇宙");
+/* ========= 新增習慣 ========= */
+document.getElementById("btnAddHabit").addEventListener("click", () => {
+  const name = prompt("習慣名稱（例如：每天寫 2 題數學）");
+  if (!name) return;
+  const desc = prompt("簡短描述（可留空）", "你想要求自己的具體標準，例如讀書多久算完成");
+  const id = "h_" + Date.now();
+  habits.push({id, name, desc: desc || ""});
+  saveHabits(habits);
+  renderHabits();
+  showHUD("已新增習慣");
+});
+
+/* ========= 換一句語錄 ========= */
+document.getElementById("btnNewQuote").addEventListener("click", () => {
+  pickQuote();
 });
 
 /* ========= Conway 背景 ========= */
@@ -356,9 +539,15 @@ function loop() {
 }
 loop();
 
+/* ========= ⚡ 重生宇宙 ========= */
+document.getElementById("btnUniverse").addEventListener("click", () => {
+  randomGrid();
+  showHUD("⚡ 新宇宙");
+});
+
 /* ========= 初始化 ========= */
-updateStarUI();
-renderHistory();
+pickQuote();
+renderHabits();
 </script>
 </body>
 </html>
