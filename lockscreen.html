@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Conway Study OS</title>
+
+  <!-- iOS / 手機顯示友善 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StudyOS">
+</head>
+<body style="margin:0; overflow:hidden; background:#0a0a15;">
+
+<canvas id="c"></canvas>
+
+<!-- 上方：時間軸 -->
+<div id="timeline"
+     style="position:fixed; top:0; left:0; width:100%; height:110px;
+     background:rgba(0,0,0,0.25); backdrop-filter: blur(4px);
+     color:#d0d8ff; font-family:monospace; z-index:50;">
+</div>
+
+<!-- 中央：模式 / 時間 -->
+<div id="overlay"
+     style="position:fixed; top:50%; left:50%;
+     transform: translate(-50%, -50%);
+     color:#d0d8ff;
+     font-family:'JetBrains Mono', monospace;
+     font-size:80px; text-align:center;
+     text-shadow:0 0 20px #000; z-index:10;">
+</div>
+
+<!-- 底部：快捷鍵說明 -->
+<div id="help"
+     style="position:fixed; bottom:20px; left:50%;
+     transform: translateX(-50%);
+     color:#8fa0ffcc;
+     font-family: monospace; font-size:14px;
+     text-align:center; white-space:pre-line; z-index:10;">
+</div>
+
+<!-- 中央：行程編輯面板 -->
+<div id="editPanel"
+     style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+     width:480px; height:300px; background:#111a; backdrop-filter:blur(10px);
+     border:1px solid #667; border-radius:8px; padding:20px; display:none;
+     color:white; font-family:monospace; z-index:200;">
+  <div style="font-size:18px; margin-bottom:10px;">編輯今日行程</div>
+  <textarea id="editArea"
+            style="width:100%; height:200px; background:#0008; color:#eef;
+            border:1px solid #667; border-radius:4px; padding:6px;
+            font-family:monospace; font-size:14px;"></textarea>
+  <div style="margin-top:10px; font-size:13px;">
+    Ctrl+Enter = 儲存　Esc = 取消　格式：HH:MM-HH:MM 標題
+  </div>
+</div>
+
+<!-- 中央：行程變更提示 (C2 Cyber HUD) -->
+<div id="toast"
+     style="position:fixed; top:50%; left:50%;
+     transform:translate(-50%, -50%);
+     background:rgba(255,255,255,0.9); color:#000;
+     padding:18px 28px; border-radius:8px;
+     font-family:monospace; font-size:26px;
+     box-shadow:0 0 25px #fff;
+     opacity:0; pointer-events:none; z-index:300;">
+</div>
+
+<script>
+/* ========== 基本 DOM ========== */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+canvas.setAttribute("tabindex", "0");
+
+const overlay = document.getElementById("overlay");
+const helpDiv = document.getElementById("help");
+const timelineDiv = document.getElementById("timeline");
+const panel = document.getElementById("editPanel");
+const area  = document.getElementById("editArea");
+const toast = document.getElementById("toast");
+
+/* ========== Conway 生命遊戲 ========== */
+const cellSize = 7;
+let cols, rows;
+let grid = [];
+let frame = 0;
+let speed = 2;
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  cols = Math.floor(canvas.width / cellSize);
+  rows = Math.floor(canvas.height / cellSize);
+  randomGrid();
+}
+window.addEventListener("resize", resize);
+
+function randomGrid() {
+  grid = Array.from({length: rows}, () =>
+    Array.from({length: cols}, () => Math.random() > 0.82 ? 1 : 0)
+  );
+}
+
+resize();
+
+// freeze 檢測 + 永動模式
+let freezeCounter = 0;
+let lastGridHash = "";
+let lastSeedTime = Date.now();
+const seedInterval = 10000; // 10 秒
+
+function gridHash() {
+  return grid.map(r => r.join("")).join("|");
+}
+
+function injectSeeds() {
+  // 稍微多灑一點，肉眼看得出來有變化
+  for (let i = 0; i < 222; i++) {
+    const x = Math.floor(Math.random() * cols);
+    const y = Math.floor(Math.random() * rows);
+    grid[y][x] = 1;
+  }
+}
+
+function nextGen() {
+  let newGrid = grid.map(r => [...r]);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      let n = 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++)
+          if (dx || dy) n += grid[(y+dy+rows)%rows][(x+dx+cols)%cols];
+      newGrid[y][x] = (n === 3 || (n === 2 && grid[y][x])) ? 1 : 0;
+    }
+  }
+  grid = newGrid;
+
+  const h = gridHash();
+  if (h === lastGridHash) freezeCounter++;
+  else freezeCounter = 0;
+  lastGridHash = h;
+
+  if (freezeCounter > 50) {
+    randomGrid();
+    freezeCounter = 0;
+  }
+}
+
+/* ========== 番茄鐘 ========== */
+let focusMinutes = 25;
+let breakMinutes = 5;
+
+let mode = "FOCUS";
+let secondsLeft = focusMinutes * 60;
+let pomoRunning = false;
+let pomoActive  = false; // ★ 新增：是否顯示番茄模式
+
+function applyMode() {
+  secondsLeft = (mode === "FOCUS" ? focusMinutes : breakMinutes) * 60;
+  randomGrid();
+}
+
+setInterval(() => {
+  if (!pomoActive || !pomoRunning) return;
+  secondsLeft--;
+  if (secondsLeft <= 0) {
+    mode = (mode === "FOCUS") ? "BREAK" : "FOCUS";
+    applyMode();
+  }
+}, 1000);
+
+/* ========== Timeline & 行程 ========== */
+let WAKE_TIME  = localStorage.wakeTime  || "07:00";
+let SLEEP_TIME = localStorage.sleepTime || "23:00";
+
+let schedule = [
+  {start:"07:00", end:"09:00", label:"數學"},
+  {start:"09:00", end:"10:30", label:"物理"},
+  {start:"10:30", end:"11:00", label:"休息"},
+  {start:"11:00", end:"12:00", label:"英文"}
+];
+if (localStorage.timeline) {
+  try { schedule = JSON.parse(localStorage.timeline); } catch(e){}
+}
+
+function timeToMin(t){
+  const [h,m] = t.split(":").map(Number);
+  return h*60+m;
+}
+
+let lastBlock = null;
+
+function showToast(txt) {
+  toast.textContent = txt;
+  toast.style.transition = "none";
+  toast.style.opacity = 0;
+  setTimeout(()=>{
+    toast.style.transition = "opacity 0.6s ease-out";
+    toast.style.opacity = 1;
+  },20);
+  setTimeout(()=>{
+    toast.style.opacity = 0;
+  },1000);
+}
+
+function renderTimeline() {
+  const div = timelineDiv;
+  div.innerHTML = "";
+
+  const nowStr = new Date().toTimeString().slice(0,5);
+  const nowMin = timeToMin(nowStr);
+  const sMin   = timeToMin(WAKE_TIME);
+  const eMin   = timeToMin(SLEEP_TIME);
+  const total  = (eMin - sMin) || 1;
+
+  // 時段切換提示
+  let current = null;
+  for (let blk of schedule) {
+    if (nowMin >= timeToMin(blk.start) && nowMin < timeToMin(blk.end)) {
+      current = blk;
+    }
+  }
+  if (current !== lastBlock && lastBlock !== null) {
+    showToast(`${lastBlock.label} ➜ ${current ? current.label : "結束"}`);
+  }
+  lastBlock = current;
+
+  // 時間刻度
+  const ticks = document.createElement("div");
+  ticks.style.width = "90%";
+  ticks.style.margin = "5px auto 0 auto";
+  ticks.style.display = "flex";
+  ticks.style.justifyContent = "space-between";
+  ticks.style.opacity = "0.8";
+  ticks.style.fontSize = "14px";
+
+  const sh = parseInt(WAKE_TIME.split(":")[0]);
+  const eh = parseInt(SLEEP_TIME.split(":")[0]);
+
+  for (let h = sh; h <= eh; h++) {
+    const t = document.createElement("div");
+    t.textContent = String(h).padStart(2,"0") + ":00";
+    ticks.appendChild(t);
+  }
+  div.appendChild(ticks);
+
+  // bar 主體
+  const bar = document.createElement("div");
+  bar.style.position = "relative";
+  bar.style.top = "8px";
+  bar.style.height = "35px";
+  bar.style.width = "90%";
+  bar.style.margin = "0 auto";
+  bar.style.background = "#1a1a2a";
+  bar.style.borderRadius = "6px";
+  div.appendChild(bar);
+
+  // 時段區塊
+  for (let blk of schedule) {
+    const st = timeToMin(blk.start);
+    const ed = timeToMin(blk.end);
+    const left  = (st-sMin)/total*100;
+    const width = (ed-st)/total*100;
+
+    const b = document.createElement("div");
+    b.style.position = "absolute";
+    b.style.left = left + "%";
+    b.style.width = width + "%";
+    b.style.height = "100%";
+    b.style.background = "rgba(100,150,255,0.25)";
+    b.style.border = "1px solid rgba(150,180,255,0.4)";
+    b.style.borderRadius = "5px";
+    b.style.textAlign = "center";
+    b.style.lineHeight = "35px";
+    b.style.fontSize = "14px";
+    b.textContent = blk.label;
+    bar.appendChild(b);
+  }
+
+  // NOW marker
+  if (nowMin >= sMin && nowMin <= eMin) {
+    const nowX = (nowMin - sMin)/total*100;
+    const mk = document.createElement("div");
+    mk.style.position = "absolute";
+    mk.style.left = nowX + "%";
+    mk.style.top = "17px";
+    mk.style.transform = "translateX(-50%)";
+    mk.style.width = "14px";
+    mk.style.height = "14px";
+    mk.style.borderRadius = "50%";
+    mk.style.background = "#fff";
+    mk.style.boxShadow = "0 0 10px #fff";
+    bar.appendChild(mk);
+  }
+}
+
+/* ========== 行程編輯器 ========== */
+function openEditor(){
+  area.value = schedule.map(x=>`${x.start}-${x.end} ${x.label}`).join("\n");
+  panel.style.display = "block";
+  area.focus();
+}
+function closeEditor(){ panel.style.display = "none"; }
+
+function saveSchedule(){
+  const lines = area.value.split("\n");
+  const newList = [];
+  for (let ln of lines) {
+    const m = ln.match(/(\d\d:\d\d)-(\d\d:\d\d)\s+(.+)/);
+    if (m) newList.push({start:m[1], end:m[2], label:m[3]});
+  }
+  if (newList.length > 0) {
+    schedule = newList;
+    localStorage.timeline = JSON.stringify(schedule);
+  }
+  closeEditor();
+}
+
+/* ========== 繪圖 / UI 更新 ========== */
+function drawConway(){
+  ctx.fillStyle = "#0a0a15";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = (mode==="FOCUS") ? "#4fa3ff33" : "#ff7fcc33";
+  for (let y=0; y<rows; y++)
+    for (let x=0; x<cols; x++)
+      if (grid[y][x])
+        ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+}
+
+function updateOverlay(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,"0");
+  const mm = String(now.getMinutes()).padStart(2,"0");
+
+  if (!pomoActive) {
+    // 一般模式：顯示現在時間
+    overlay.innerHTML =
+      `<div style="font-size:40px; margin-bottom:10px;">TIME</div>`+
+      `<div>${hh}:${mm}</div>`;
+  } else {
+    // 番茄模式：顯示 FOCUS/BREAK 倒數
+    const m = String(Math.floor(secondsLeft/60)).padStart(2,"0");
+    const s = String(secondsLeft%60).padStart(2,"0");
+    overlay.innerHTML =
+      `<div style="font-size:40px; margin-bottom:10px;">${mode}</div>`+
+      `<div>${m}:${s}</div>`;
+  }
+
+  helpDiv.textContent =
+    "[P] 啟動/暫停番茄模式  [O] 關閉番茄顯示  [N] 切換 FOCUS/BREAK\n"+
+    "[F] 專注分鐘  [B] 休息分鐘  [W] 起床時間  [E] 睡覺時間\n"+
+    "[R] 重生宇宙  [1/2/3] Conway 速度  [T] 編輯時間軸  Alt+F4 離開";
+}
+
+/* ========== 主 loop ========== */
+function mainLoop(){
+  frame++;
+
+  if (frame % (4-speed) === 0) {
+    nextGen();
+  }
+
+  // 每 10 秒灑一次種子（保證一定走）
+  const now = Date.now();
+  if (now - lastSeedTime >= seedInterval) {
+    injectSeeds();
+    lastSeedTime = now;
+  }
+
+  drawConway();
+  updateOverlay();
+  renderTimeline();
+
+  requestAnimationFrame(mainLoop);
+}
+mainLoop();
+
+/* ========== 鍵盤事件 ========== */
+window.addEventListener("keydown", e => {
+  // 編輯器開啟時
+  if (panel.style.display === "block") {
+    if (e.ctrlKey && e.key === "Enter") {
+      e.preventDefault();
+      saveSchedule();
+      return;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeEditor();
+      return;
+    }
+    return;
+  }
+
+  if (e.repeat) return;
+
+  if (e.key === "p" || e.key === "P") {
+    if (!pomoActive) {
+      // 第一次 P：啟動番茄模式
+      pomoActive = true;
+      pomoRunning = true;
+      applyMode();
+    } else {
+      // 之後 P：暫停/繼續
+      pomoRunning = !pomoRunning;
+    }
+  }
+  else if (e.key === "o" || e.key === "O") {
+    // 關閉番茄顯示，回到 TIME
+    pomoActive = false;
+    pomoRunning = false;
+  }
+  else if (e.key === "n" || e.key === "N") {
+    mode = (mode === "FOCUS") ? "BREAK" : "FOCUS";
+    if (pomoActive) applyMode();
+  }
+  else if (e.key === "f" || e.key === "F") {
+    const v = prompt("Set FOCUS minutes:", focusMinutes);
+    const n = parseInt(v);
+    if (!isNaN(n) && n>0) { focusMinutes = n; if (pomoActive && mode==="FOCUS") applyMode(); }
+  }
+  else if (e.key === "b" || e.key === "B") {
+    const v = prompt("Set BREAK minutes:", breakMinutes);
+    const n = parseInt(v);
+    if (!isNaN(n) && n>0) { breakMinutes = n; if (pomoActive && mode==="BREAK") applyMode(); }
+  }
+  else if (e.key === "w" || e.key === "W") {
+    const v = prompt("Set WAKE time HH:MM:", WAKE_TIME);
+    if (v && /^\d\d:\d\d$/.test(v)) {
+      WAKE_TIME = v;
+      localStorage.wakeTime = v;
+    }
+  }
+  else if (e.key === "e" || e.key === "E") {
+    const v = prompt("Set SLEEP time HH:MM:", SLEEP_TIME);
+    if (v && /^\d\d:\d\d$/.test(v)) {
+      SLEEP_TIME = v;
+      localStorage.sleepTime = v;
+    }
+  }
+  else if (e.key === "r" || e.key === "R") {
+    randomGrid();
+  }
+  else if (e.key === "1") speed = 1;
+  else if (e.key === "2") speed = 2;
+  else if (e.key === "3") speed = 3;
+  else if (e.key === "t" || e.key === "T") {
+    openEditor();
+  }
+});
+
+canvas.addEventListener("mousedown", () => canvas.focus());
+window.addEventListener("load",     () => canvas.focus());
+</script>
+</body>
+</html>
