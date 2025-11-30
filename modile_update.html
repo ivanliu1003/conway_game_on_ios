@@ -286,7 +286,49 @@
 
 <!-- OS 模式橫幅 -->
 <div id="osBanner">STUDY OS • ACTIVE</div>
+<div id="wakeSleepBox" style="
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 10px) + 40px);
+  right: 10px;
+  left: 10px;
+  padding: 10px 14px;
+  background: rgba(10,10,30,0.88);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(120,140,255,0.5);
+  z-index: 10;
+  font-size: 13px;
+">
 
+  <div style="margin-bottom: 6px; text-align: center; opacity: .8;">
+    ⏰ 起床 / 睡眠設定
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content: space-between; margin-bottom:8px;">
+    <span>起床：</span>
+    <input id="wakeTime" type="time" value="07:00" style="
+      background:#1b2035;
+      color:#dbe0ff;
+      border:1px solid rgba(120,140,255,0.4);
+      padding:6px 10px;
+      border-radius:6px;
+      font-size:14px;
+    ">
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content: space-between;">
+    <span>睡覺：</span>
+    <input id="sleepTime" type="time" value="23:30" style="
+      background:#1b2035;
+      color:#dbe0ff;
+      border:1px solid rgba(120,140,255,0.4);
+      padding:6px 10px;
+      border-radius:6px;
+      font-size:14px;
+    ">
+  </div>
+
+</div>
 <!-- 左側直向時間線 -->
 <div id="timeline"></div>
 
