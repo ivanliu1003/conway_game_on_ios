@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>StructuredOS — Day Planner</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StructuredOS">
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: #05060d;
+      color: #e5e9ff;
+    }
+
+    /* 頂部日期欄 */
+    #topBar {
+      position: fixed;
+      top: env(safe-area-inset-top, 0px);
+      left: 0;
+      right: 0;
+      padding: 8px 12px;
+      background: rgba(5,5,20,0.95);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      border-bottom: 1px solid rgba(80,90,150,0.7);
+    }
+
+    #dateDisplay {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    #dayLabel {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    #topButtons {
+      display: flex;
+      gap: 4px;
+    }
+    .topBtn {
+      border-radius: 999px;
+      border: none;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-family: inherit;
+      background: #151a33;
+      color: #dfe3ff;
+    }
+    .topBtn:active {
+      transform: scale(0.96);
+    }
+
+    /* 主區：時間表 */
+    #main {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 44px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
+      left: 0;
+      right: 0;
+      overflow-y: auto;
+      padding: 8px 10px 10px 10px;
+    }
+
+    .slot {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      margin-bottom: 4px;
+      background: rgba(8,10,28,0.9);
+      border: 1px solid rgba(40,50,100,0.8);
+    }
+
+    .slotTime {
+      width: 42px;
+      font-size: 12px;
+      opacity: 0.8;
+      padding-top: 4px;
+      text-align: right;
+    }
+
+    .slotContentWrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slotText {
+      flex: 1;
+      min-height: 20px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: rgba(4,6,20,0.9);
+      border: 1px solid transparent;
+      font-size: 13px;
+      outline: none;
+      white-space: pre-wrap;
+    }
+    .slotText:focus {
+      border-color: rgba(110,140,255,0.9);
+      box-shadow: 0 0 0 1px rgba(110,140,255,0.6);
+    }
+
+    .slotCheck {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid rgba(120,140,255,0.8);
+      background: transparent;
+      position: relative;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .slotCheck.done {
+      background: #37d086;
+      border-color: #37d086;
+      box-shadow: 0 0 8px rgba(55,208,134,0.8);
+    }
+    .slotCheck.done::after {
+      content: "✔";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -58%);
+      font-size: 12px;
+      color: #041010;
+    }
+
+    .slot.done .slotText {
+      opacity: 0.6;
+      text-decoration: line-through;
+    }
+
+    /* 底部工具列 */
+    #bottomBar {
+      position: fixed;
+      bottom: env(safe-area-inset-bottom, 0px);
+      left: 0;
+      right: 0;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: rgba(5,5,20,0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(80,90,150,0.7);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      font-size: 11px;
+    }
+
+    #bottomLeft {
+      opacity: 0.85;
+    }
+
+    #bottomButtons {
+      display: flex;
+      gap: 4px;
+    }
+    .bottomBtn {
+      border-radius: 999px;
+      border: none;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-family: inherit;
+      background: #151a33;
+      color: #dfe3ff;
+    }
+    .bottomBtn.danger {
+      background: #ff4b7a;
+      color: #fff;
+    }
+    .bottomBtn:active {
+      transform: scale(0.96);
+    }
+
+    /* 簡單 HUD */
+    #hud {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 10px 16px;
+      background: white;
+      color: #000;
+      font-family: ui-monospace, monospace;
+      border-radius: 10px;
+      box-shadow: 0 0 18px rgba(255,255,255,0.9);
+      opacity: 0;
+      z-index: 30;
+      transition: opacity 0.25s ease-out;
+      font-size: 14px;
+      white-space: pre-line;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div id="topBar">
+  <div>
+    <div id="dateDisplay"></div>
+    <div id="dayLabel"></div>
+  </div>
+  <div id="topButtons">
+    <button class="topBtn" id="btnPrevDay">←</button>
+    <button class="topBtn" id="btnToday">今天</button>
+    <button class="topBtn" id="btnNextDay">→</button>
+  </div>
+</div>
+
+<div id="main"></div>
+
+<div id="bottomBar">
+  <div id="bottomLeft">
+    <span id="doneCount">0</span> / <span id="totalCount">0</span> 完成
+  </div>
+  <div id="bottomButtons">
+    <button class="bottomBtn" id="btnFocusNow">現在這一格</button>
+    <button class="bottomBtn danger" id="btnClearDay">清空當天</button>
+  </div>
+</div>
+
+<div id="hud"></div>
+
+<script>
+const main = document.getElementById("main");
+const dateDisplay = document.getElementById("dateDisplay");
+const dayLabel    = document.getElementById("dayLabel");
+const btnPrevDay  = document.getElementById("btnPrevDay");
+const btnNextDay  = document.getElementById("btnNextDay");
+const btnToday    = document.getElementById("btnToday");
+const btnFocusNow = document.getElementById("btnFocusNow");
+const btnClearDay = document.getElementById("btnClearDay");
+const doneCountEl = document.getElementById("doneCount");
+const totalCountEl= document.getElementById("totalCount");
+const hud         = document.getElementById("hud");
+
+let currentDate = new Date();
+
+/* 工具 */
+function dateKey(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day= String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+
+function weekdayName(d) {
+  const arr = ["日","一","二","三","四","五","六"];
+  return arr[d.getDay()];
+}
+
+function showHUD(msg) {
+  hud.textContent = msg;
+  hud.style.opacity = 1;
+  setTimeout(()=>hud.style.opacity = 0, 900);
+}
+
+/* LocalStorage */
+function loadDay(dateKeyStr) {
+  try {
+    return JSON.parse(localStorage["structured_" + dateKeyStr] || "{}");
+  } catch(e) {
+    return {};
+  }
+}
+
+function saveDay(dateKeyStr, data) {
+  localStorage["structured_" + dateKeyStr] = JSON.stringify(data);
+}
+
+/* 渲染 */
+function renderDay() {
+  main.innerHTML = "";
+
+  const dk = dateKey(currentDate);
+  const store = loadDay(dk);
+
+  dateDisplay.textContent = formatDate(currentDate);
+  dayLabel.textContent    = "星期" + weekdayName(currentDate);
+
+  const startHour = 7;
+  const endHour   = 23;
+
+  let doneCount  = 0;
+  let totalSlots = 0;
+
+  for (let h = startHour; h <= endHour; h++) {
+    const slotTimeStr = String(h).padStart(2,"0") + ":00";
+    const slotKey     = slotTimeStr;
+
+    const slotData = store[slotKey] || { text:"", done:false };
+
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    if (slotData.done) slot.classList.add("done");
+
+    const timeDiv = document.createElement("div");
+    timeDiv.className = "slotTime";
+    timeDiv.textContent = slotTimeStr;
+    slot.appendChild(timeDiv);
+
+    const contentWrap = document.createElement("div");
+    contentWrap.className = "slotContentWrap";
+
+    const textDiv = document.createElement("div");
+    textDiv.className = "slotText";
+    textDiv.contentEditable = "true";
+    textDiv.textContent = slotData.text || "";
+    textDiv.dataset.time = slotKey;
+
+    const checkDiv = document.createElement("div");
+    checkDiv.className = "slotCheck";
+    if (slotData.done) checkDiv.classList.add("done");
+    checkDiv.dataset.time = slotKey;
+
+    contentWrap.appendChild(textDiv);
+    contentWrap.appendChild(checkDiv);
+    slot.appendChild(contentWrap);
+
+    main.appendChild(slot);
+
+    // 計數
+    totalSlots++;
+    if (slotData.done) doneCount++;
+
+    // 事件：文字變更
+    textDiv.addEventListener("input", () => {
+      const dk2 = dateKey(currentDate);
+      const st  = loadDay(dk2);
+      const s   = st[slotKey] || { text:"", done:false };
+      s.text = textDiv.textContent.trim();
+      st[slotKey] = s;
+      saveDay(dk2, st);
+    });
+
+    // 事件：完成切換
+    checkDiv.addEventListener("click", () => {
+      const dk2 = dateKey(currentDate);
+      const st  = loadDay(dk2);
+      const s   = st[slotKey] || { text:"", done:false };
+      s.done = !s.done;
+      st[slotKey] = s;
+      saveDay(dk2, st);
+      renderDay();
+    });
+  }
+
+  doneCountEl.textContent  = doneCount;
+  totalCountEl.textContent = totalSlots;
+}
+
+/* 按鈕事件 */
+btnPrevDay.addEventListener("click", () => {
+  currentDate.setDate(currentDate.getDate() - 1);
+  renderDay();
+});
+btnNextDay.addEventListener("click", () => {
+  currentDate.setDate(currentDate.getDate() + 1);
+  renderDay();
+});
+btnToday.addEventListener("click", () => {
+  currentDate = new Date();
+  renderDay();
+});
+
+btnClearDay.addEventListener("click", () => {
+  const dk = dateKey(currentDate);
+  if (confirm("確定要清空這一天的排程？")) {
+    saveDay(dk, {});
+    renderDay();
+    showHUD("已清空這一天");
+  }
+});
+
+btnFocusNow.addEventListener("click", () => {
+  const now = new Date();
+  const h = now.getHours();
+  const target = String(h).padStart(2,"0") + ":00";
+  const slots = main.querySelectorAll(".slot");
+  let found = null;
+  slots.forEach(s => {
+    const t = s.querySelector(".slotTime").textContent;
+    if (t === target) found = s;
+  });
+  if (found) {
+    found.scrollIntoView({behavior:"smooth", block:"center"});
+    const textDiv = found.querySelector(".slotText");
+    textDiv.focus();
+    showHUD("現在這一格：\n" + target);
+  } else {
+    showHUD("現在時間不在 07:00–23:00 範圍內");
+  }
+});
+
+/* 初始化 */
+renderDay();
+</script>
+</body>
+</html>
