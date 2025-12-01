@@ -43,7 +43,44 @@
     #quoteText {
       opacity: 0.9;
     }
+    #weekSummary {
+  margin: 4px 0 8px 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #050814;
+  border: 1px solid #333a66;
+  font-size: 11px;
+}
 
+#weekSummaryTitle {
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+#weekBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.weekBarWrap {
+  flex: 1;
+  text-align: center;
+}
+
+.weekBar {
+  width: 100%;
+  max-width: 16px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: #15182a;
+}
+
+.weekBarLabel {
+  margin-top: 2px;
+  opacity: 0.7;
+  font-size: 10px;
+}
     /* 習慣列表 */
     #habitList {
       position: fixed;
@@ -358,6 +395,9 @@
   <div id="yearBox">
     <div id="yearTitle">年度熱力圖</div>
     <div id="yearHint">顏色越亮代表那天完成的習慣越多。</div>
+
+    <div id="weekSummary"></div>
+
     <div id="yearGrid"></div>
     <div id="yearButtons">
       <button id="btnCloseYear">關閉</button>
@@ -371,13 +411,13 @@
     <div id="startTitle">啟動儀式 · 2 分鐘</div>
     <div id="startHint">照這個做完就可以去點亮一顆星。</div>
     <div id="startBody">
-1. 坐下，不用整理桌子
-2. 把書或筆記本放在桌上
+1. 坐下，想像自己想過的生活
+2. 想想現在的自己應該做什麼來達成
 3. 告訴自己：只先讀 2 分鐘
 4. 翻開任意一頁，看著字 10 秒
 5. 然後開始寫 / 讀
 
-這 2 分鐘只是一個「啟動」，不是在比誰最會讀。
+
     </div>
     <div id="startTimer">02:00</div>
     <div id="startButtons">
@@ -685,16 +725,73 @@ const yearPanel  = document.getElementById("yearPanel");
 const yearGrid   = document.getElementById("yearGrid");
 const btnYear    = document.getElementById("btnYearView");
 const btnCloseYear = document.getElementById("btnCloseYear");
+const weekSummaryDiv = document.getElementById("weekSummary");
 
+function renderWeekSummary() {
+  weekSummaryDiv.innerHTML = "";
+
+  const wrapper = document.createElement("div");
+  const title = document.createElement("div");
+  title.id = "weekSummaryTitle";
+  title.textContent = "最近 7 天完成的星星數";
+  wrapper.appendChild(title);
+
+  const bars = document.createElement("div");
+  bars.id = "weekBars";
+
+  const now = new Date();
+  // 算出最近 7 天
+  let maxCount = 1;
+  const data = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    const c = countDoneForDate(key);
+    if (c > maxCount) maxCount = c;
+    data.push({ date: d, key, count: c });
+  }
+
+  const weekdayLabel = ["日","一","二","三","四","五","六"];
+
+  data.forEach(item => {
+    const wrap = document.createElement("div");
+    wrap.className = "weekBarWrap";
+
+    const bar = document.createElement("div");
+    bar.className = "weekBar";
+    const ratio = item.count / maxCount;
+    const h = item.count === 0 ? 4 : 4 + Math.round(20 * ratio);
+    bar.style.height = h + "px";
+    if (item.count > 0) {
+      bar.style.background = item.count === 1
+        ? "#244a7f"
+        : (item.count === 2 ? "#3d7bff" : "#6bb4ff");
+      bar.style.boxShadow = "0 0 6px rgba(80,120,255,0.7)";
+    }
+
+    const lab = document.createElement("div");
+    lab.className = "weekBarLabel";
+    lab.textContent = weekdayLabel[item.date.getDay()];
+
+    wrap.appendChild(bar);
+    wrap.appendChild(lab);
+    bars.appendChild(wrap);
+  });
+
+  wrapper.appendChild(bars);
+  weekSummaryDiv.appendChild(wrapper);
+}
 function daysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
 }
 
 function renderYearHeatmap() {
+  
   yearGrid.innerHTML = "";
   const now  = new Date();
   const year = now.getFullYear();
-
+  renderWeekSummary()
   // 預先算出每一天完成幾個習慣
   const dateDoneCount = {};
   habits.forEach(h => {
