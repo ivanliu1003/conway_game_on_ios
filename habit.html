@@ -175,15 +175,15 @@
     .toolBtn {
       border: none;
       border-radius: 999px;
-      padding: 7px 12px;
+      padding: 7px 10px;
       background: #1b2355;
       color: #e5e9ff;
       font-size: 12px;
       font-family: inherit;
-      min-width: 70px;
+      min-width: 64px;
     }
     .toolBtn.primary { background: #2d5bff; }
-    .toolBtn.danger { background: #ff4b7a; }
+    .toolBtn.danger  { background: #ff4b7a; }
     .toolBtn:active { transform: scale(0.96); }
 
     /* HUD */
@@ -199,12 +199,131 @@
       border-radius: 10px;
       box-shadow: 0 0 18px rgba(255,255,255,0.9);
       opacity: 0;
-      z-index: 20;
+      z-index: 40;
       transition: opacity 0.25s ease-out;
       font-size: 16px;
       white-space: pre-line;
       text-align: center;
     }
+
+    /* 第一顆星的爆擊動畫 */
+    #firstStarFX {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.2);
+      font-size: 80px;
+      opacity: 0;
+      z-index: 45;
+      pointer-events: none;
+      text-shadow: 0 0 30px rgba(255, 217, 92, 0.9);
+    }
+    #firstStarFX.show {
+      animation: starPop 0.8s ease-out forwards;
+    }
+    @keyframes starPop {
+      0%   { opacity: 0;   transform: translate(-50%, -50%) scale(0.2); }
+      30%  { opacity: 1;   transform: translate(-50%, -50%) scale(1.2); }
+      60%  { opacity: 1;   transform: translate(-50%, -50%) scale(1.0); }
+      100% { opacity: 0;   transform: translate(-50%, -50%) scale(0.6); }
+    }
+
+    /* 全年熱力圖面板 */
+    #yearPanel, #startPanel {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(12px);
+      display: none;
+      z-index: 30;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    #yearBox, #startBox {
+      width: 100%;
+      max-width: 440px;
+      max-height: 90vh;
+      background: #0b0d1a;
+      border-radius: 14px;
+      border: 1px solid #444c88;
+      padding: 12px;
+      box-shadow: 0 0 24px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #yearTitle, #startTitle {
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+    #yearHint, #startHint {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+
+    #yearGrid {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+
+    .yearMonth {
+      margin-bottom: 8px;
+    }
+    .yearMonthTitle {
+      margin-bottom: 3px;
+      opacity: 0.85;
+    }
+    .yearDays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .yearDay {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      background: #15182a;
+    }
+    .heat0 { background: #15182a; }
+    .heat1 { background: #244a7f; }
+    .heat2 { background: #3d7bff; }
+    .heat3 { background: #6bb4ff; }
+
+    #yearButtons, #startButtons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      font-size: 13px;
+    }
+    #yearButtons button,
+    #startButtons button {
+      border-radius: 999px;
+      border: none;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    /* 啟動儀式內容 */
+    #startBody {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+      white-space: pre-line;
+    }
+    #startTimer {
+      font-family: ui-monospace, monospace;
+      font-size: 24px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
   </style>
 </head>
 <body>
@@ -221,20 +340,56 @@
 
 <!-- HUD -->
 <div id="hud"></div>
+<div id="firstStarFX">⭐</div>
 
 <!-- 工具列 -->
 <div id="toolbar">
   <div id="toolbarInner">
-    <button class="toolBtn primary" id="btnAddHabit">新增習慣</button>
+    <button class="toolBtn primary" id="btnAddHabit">新增</button>
+    <button class="toolBtn" id="btnStartRitual">啟動 2 分鐘</button>
+    <button class="toolBtn" id="btnYearView">Year</button>
     <button class="toolBtn" id="btnNewQuote">換一句</button>
     <button class="toolBtn danger" id="btnUniverse">⚡</button>
+  </div>
+</div>
+
+<!-- 年度熱力圖面板 -->
+<div id="yearPanel">
+  <div id="yearBox">
+    <div id="yearTitle">年度熱力圖</div>
+    <div id="yearHint">顏色越亮代表那天完成的習慣越多。</div>
+    <div id="yearGrid"></div>
+    <div id="yearButtons">
+      <button id="btnCloseYear">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- 啟動儀式面板 -->
+<div id="startPanel">
+  <div id="startBox">
+    <div id="startTitle">啟動儀式 · 2 分鐘</div>
+    <div id="startHint">照這個做完就可以去點亮一顆星。</div>
+    <div id="startBody">
+1. 坐下，不用整理桌子
+2. 把書或筆記本放在桌上
+3. 告訴自己：只先讀 2 分鐘
+4. 翻開任意一頁，看著字 10 秒
+5. 然後開始寫 / 讀
+
+這 2 分鐘只是一個「啟動」，不是在比誰最會讀。
+    </div>
+    <div id="startTimer">02:00</div>
+    <div id="startButtons">
+      <button id="btnCancelStart">取消</button>
+      <button id="btnBeginStart" style="background:#2d5bff; color:white;">開始計時</button>
+    </div>
   </div>
 </div>
 
 <script>
 /* ========= 語錄 ========= */
 const QUOTES = [
-  "我認真起來,我自己都害怕",
   "今天做的每一題，都是在幫未來的自己還債。",
   "不是你不夠聰明，是你還不夠穩定地坐下來。",
   "先求有，再求好；先開始，再完美。",
@@ -243,209 +398,18 @@ const QUOTES = [
   "別跟別人比，先把昨天的自己打爆再說。",
   "如果一定要熬夜，那就確保它是值得的。",
   "學習不是為了考試，是為了讓你以後可以選擇。",
-  "你現在啃的每一頁，都是幫你打開一扇門。",
+  "你現在啃的每一頁，都在幫你打開一扇門。",
   "當你不想讀書時，剛好就是最需要讀書的時候。",
-  "當你捲起袖子，全世界都會讓路。",
-"你不是普通人，你是蓄勢待發的怪物。",
-"你的努力正在醞釀一場巨變。",
-"沒有人能阻止你，除了你自己。",
-"你的對手正在低估你，而你正在變強。",
-"每次點亮星星，都在喚醒你體內的怪物。",
-"你不是在讀書，你在累積破局的力量。",
-"你今天不努力，明天連後悔的資格都沒有。",
-"你要變成任何考試都壓不住的人。",
-"你正在打造一個連你自己都害怕的未來版本。",
-"你熬過黑夜，你就成為黑夜。",
-"你不是累，你是在進化。",
-"未來會有一刻，你會感謝此刻的狠。",
-"別人會害怕你這種穩定的努力。",
-"你是為了征服，而不是混過去。",
-"現在的煎熬是你能量的壓縮包。",
-"完成一件事，就是對世界的一次下克上。",
-"你走的每一步都在突破命運的劇本。",
-"你不是在努力，你在積蓄能量準備翻桌。",
-"今天狠一次，明天少狠十次。",
-  "未來的你會感謝現在努力的你。",
-"你正在為夢想打基礎。",
-"你現在的累，未來會變成你的底氣。",
-"你要的生活在前面等你。",
-"你一點都不普通，你只是還沒發光。",
-"夢想不是說說，是做出來的。",
-"一步一步，你離想要的未來越近。",
-"只要方向對了，每前進一步都有用。",
-"不要低估長期累積的力量。",
-"你現在在搭階梯，未來才踩得穩。",
-"你值得過你想像的生活。",
-"路很遠，但你已經在路上了。",
-"今日的堅持，是明日的榮耀。",
-"你正在打造自己的未來，不是玩的。",
-"你要的不是奇蹟，是持續。",
-"你今天的努力都是你的籌碼。",
-"往前一步就是新的世界。",
-"你的夢想需要你現在的努力。",
-"別讓未來的自己失望。",
-"你值得一個更好的明天，而你正在建造它。",
-"你今天偷的懶，未來都會狠狠收利息。",
-"忍一下，後面會很好。",
-"你想要的很貴，你不能現在停下來。",
-"熬過這段時間，後面都是甜的。",
-"你現在撐住的辛苦會換回你要的生活。",
-"難就對了，好東西不可能容易。",
-"你願意多撐 10 分鐘，就是在超越一堆人。",
-"你停一下沒關係，但不要放棄。",
-"堅強不是天生，是習慣。",
-"你越狠，未來越溫柔。",
-"沒有什麼是白受的苦。",
-"痛苦不是折磨，是燃料。",
-"你能承受的比你自己以為的還多。",
-"你越想逃的地方，越是你的突破點。",
-"你受的每一次苦都會變成力量。",
-"人生沒有白練的功。",
-"比別人多咬一秒，你就更強一層。",
-"越艱難的地方越需要你留下。",
-"咬著牙撐下去，你會變成怪物。",
-"累？那是你在變強的證明。",
-"你不需要完美，你只需要更好。",
-"焦慮是因為你還不夠相信自己。",
-"放輕鬆，你其實做得比你想的好。",
-"情緒不會毀掉你，逃避會。",
-"你不是失敗，你只是正在調整。",
-"給自己一點耐心，成長需要時間。",
-"覺得累不是你不好，是你太努力了。",
-"不要把一次失敗當成全部。",
-"你值得被理解，但更值得變強。",
-"你不是在重來，你是在逐步校準方向。",
-"你的節奏你自己決定。",
-"你可以慢慢來，但不能不來。",
-"不要把今天的心情帶到明天。",
-"你已經比昨天更接近了。",
-"難過就哭，哭完繼續前進。",
-"你不必假裝堅強，但你可以選擇再試一次。",
-"每一次崩潰都在幫你重建。",
-"你沒問題，你在進步。",
-"你能撐住的比你想像多。",
-"給自己一次機會，再往前走一步。",
-"你現在做的每一題，都是別人輸掉的一題。",
-"不要怕競爭，你也是別人的壓力來源。",
-"當你努力時，你就是對手最害怕的存在。",
-"分數不會背叛你，它只會反映你做多少。",
-"考場上能撐住的，平常都撐過了更多。",
-"你多讀一頁，別人就少讀你一頁。",
-"痛苦是暫時的，分數是永遠的。",
-"你努力不是為了第一，是為了不當最後。",
-"認真的人永遠贏在細節。",
-"你現在的疲倦，未來會變成你超越別人的武器。",
-"越艱難的地方越沒人願意進去，所以越容易贏。",
-"你當不了天才，但你可以當狠角色。",
-"榜單不是 IQ 榜，是堅持榜。",
-"你在努力，別人也在；但你可以比他更穩。",
-"有人在打遊戲，有人在拼命，你選哪邊？",
-"競爭殘酷，但你可以更殘酷。",
-"你怕的對手，也在怕你。",
-"分數的背後，是你自己最真實的樣子。",
-"你累了不只你累，大家都累，看誰撐得久。",
-"你今天堅持的地方，就是你明天領先的地方。",
-"你現在遭遇的，都會變成你的底層能力。",
-"痛苦是成長的副作用。",
-"你要變成自己會羨慕的人。",
-"變強不是炫耀，是保護自己。",
-"你不能控制世界，但能控制自己。",
-"你唯一需要打敗的，就是昨天的你。",
-"跨過一件痛苦的事，你就會升級一次。",
-"沒有白走的路，每一步都算數。",
-"你的努力不會立即見效，但會默默積累。",
-"世界不欠你任何事，你欠自己一個努力的理由。",
-"每一次自我突破，都值得紀念。",
-"你為自己做的越多，你就越自由。",
-"越努力，你的世界越大。",
-"別怕慢，只怕停。",
-"你不是沒時間，是還沒設定優先順序。",
-"你對自己越狠，世界對你越溫柔。",
-"忍住當下的舒服，換來一生的舒服。",
-"不舒服就對了，那是成長。",
-"你正在塑造一個更厲害的你。",
-"你來這世界不是為了當普通人。",
-"你不是不會，只是還沒開始。",
-"拖延只會讓你更痛苦。",
-"只是做 5 分鐘，你會想繼續做。",
-"開始是 80% 的難度，剩下都是慣性。",
-"越害怕的事，越值得先做。",
-"五秒法則：倒數完就開始。",
-"等心情好才做，你永遠不會開始。",
-"把任務切成一口大小，你就能吞下去。",
-"拖延不是休息，是負擔。",
-"不做比做更累。",
-"動一下就贏了。",
-"你拖延的每一分鐘，未來都在等你還。",
-"不要想太多，先做一點點。",
-"想著去做，不如做了再想。",
-"你越逃避，壓力越大。",
-"其實你沒有那麼忙，只是開始太慢。",
-"拖延是你的敵人，行動是你的武器。",
-"最好的開始時機，就是現在。",
-"痛苦只會持續到你開始那一刻。",
-"想清楚很重要，但開始更重要。",
-"自律不是限制，是自由的入場券。",
-"你現在掌控的自己，會掌控你的未來。",
-"當你變強，世界會給你讓路。",
-"習慣在悄悄改變你，而你卻沒有察覺。",
-"做對的事，不做爽的事。",
-"開始難，但後面會感謝現在的你。",
-"你每天做的事，正在塑造你想成為的人。",
-"堅持會自動累積價值。",
-"不要小看一天的力量，它可以決定你的方向。",
-"你跨過一次懶惰，以後就跨過十次。",
-"成長不是偶然，是習慣使然。",
-"你現在建立的習慣，就是你未來的底牌。",
-"自律不是天賦，是鍛鍊。",
-"有些事你不想做，但你知道它對你很好。",
-"你能掌控一天，就能掌控一生。",
-"小習慣會變成大成果。",
-"今天做難的事，明天做想做的事。",
-"今天的習慣，決定未來的命運。",
-"做你應該做的，而不是你想做的。",
-"堅持累積，你會比自己想像的還厲害。",
-"讀書不是為了考試，是為了給未來的自己更多選擇。",
-"你今天翻的每一頁，都會在未來變成你的底氣。",
-"現在多讀一小時，以後少焦慮一天。",
-"你寫的不是題目，是未來的生活品質。",
-"不會沒關係，現在努力會。",
-"比你聰明的人都在努力了，你還在等什麼？",
-"讀書不是懲罰，是通往自由的路。",
-"學習不能讓你無敵，但可以讓你不再無助。",
-"每次坐下來讀書，都是在救未來的自己一命。",
-"今天不懂的，明天繼續；重點是不要放棄。",
-"讀得越多，你就越不怕世界。",
-"你現在累，是因為你在往上爬。",
-"不要急著看到成果，把今天做好就贏了。",
-"知識會背叛你一次，但努力不會。",
-"你不是不行，你只是還沒練到。",
-"學習不會背叛任何一個認真對待它的人。",
-"現在讀的每一頁，都在悄悄變成你的實力。",
-"考試不是敵人，是驗證你的努力而已。",
-"越努力，越幸運；越放棄，越平凡。",
-"今天翻開的，不只是書，是命運。",
-"今天不做的，明天也不會突然變簡單。",
-"開始永遠是最難的那一步，但你已經準備好了。",
-"不要等動力，行動本身會生出動力。",
-"一次只做一件事，但做到最好。",
-"你覺得難，是因為你正在成長。",
-"你沒有不會，只是還沒開始做。",
-"動起來比想一百次更重要。",
-"把注意力放在『下一步』而不是『全部』。",
-"你越拖延，壓力越大；你越做，壓力越小。",
-"行動比完美更重要。",
-"一次完成 1%，累積起來就是 100%。",
-"不要想能不能做到，先做再說。",
-"成功不是爆發，而是累積。",
-"明天想偷懶，就讓今天更努力。",
-"現在開始做的你，已經贏過 90% 的人。",
-"真正的自律是：即使不想做，也會去做。",
-"越想越難，去做就簡單。",
-"你永遠不會後悔做完的事情，只會後悔沒開始。",
-"你以為的壓力，只是你還沒動手。",
-"行動是最強的解藥。"
-
+  "你不是不行，你只是還沒開始做。",
+  "開始永遠是最難的那一步，但你已經準備好了。",
+  "拖延只會讓你更痛苦，不會讓事情變簡單。",
+  "你現在的累，未來會變成你的底氣。",
+  "沒有白受的苦，也沒有白讀的書。",
+  "你不是在讀書，你在為未來的自己鋪路。",
+  "今天翻開的不只是書，是命運。",
+  "行動本身會生出動力，不是反過來。",
+  "你不需要完美，你只需要比昨天多一點。",
+  "你現在在搭階梯，未來才踩得穩。"
 ];
 
 function pickQuote() {
@@ -467,8 +431,8 @@ function loadHabits() {
     if (!raw) {
       const defaults = [
         {id:"h1", name:"讀書 2 小時", desc:"只要今天有好好坐下來讀書，就點亮這顆星"},
-        {id:"h2", name:"運動", desc:"哪怕只是 10 分鐘也算"},
-        {id:"h3", name:"早睡", desc:"超過 12 點就不算"}
+        {id:"h2", name:"運動",       desc:"哪怕只是 10 分鐘也算"},
+        {id:"h3", name:"早睡",       desc:"超過 12 點就不算"}
       ];
       localStorage[HABITS_KEY] = JSON.stringify(defaults);
       return defaults;
@@ -511,6 +475,16 @@ function setDone(habitId, dateKey, value) {
   saveCalendar(calendar);
 }
 
+/* 當天完成幾顆星 */
+function countDoneForDate(dateKey) {
+  let c = 0;
+  habits.forEach(h => {
+    const byHabit = calendar[h.id] || {};
+    if (byHabit[dateKey]) c++;
+  });
+  return c;
+}
+
 /* 連續天數 streak */
 function getStreak(habitId) {
   const byHabit = calendar[habitId] || {};
@@ -532,6 +506,14 @@ function showHUD(msg) {
   hud.textContent = msg;
   hud.style.opacity = 1;
   setTimeout(()=>hud.style.opacity = 0, 900);
+}
+
+/* 第一顆星動畫 */
+const firstStarFX = document.getElementById("firstStarFX");
+function playFirstStarFX() {
+  firstStarFX.classList.remove("show");
+  void firstStarFX.offsetWidth; // reflow
+  firstStarFX.classList.add("show");
 }
 
 /* ========= 渲染習慣卡片 ========= */
@@ -630,11 +612,23 @@ habitListDiv.addEventListener("click", (e) => {
   if (e.target.classList.contains("bigStar") ||
       e.target.classList.contains("toggleBtn")) {
 
+    const beforeCount = countDoneForDate(today);
     const done = !isDone(id, today);
     setDone(id, today, done);
+    const afterCount = countDoneForDate(today);
+
     renderHabits();
     pickQuote();   // 切換時順便換一句話
-    showHUD(done ? "⭐ 今天完成！" : "已取消今天紀錄");
+
+    if (done) {
+      showHUD("⭐ 今天完成！");
+      if (beforeCount === 0 && afterCount === 1) {
+        // 今日第一顆星
+        playFirstStarFX();
+      }
+    } else {
+      showHUD("已取消今天紀錄");
+    }
     return;
   }
 
@@ -684,6 +678,136 @@ document.getElementById("btnAddHabit").addEventListener("click", () => {
 /* ========= 換一句語錄 ========= */
 document.getElementById("btnNewQuote").addEventListener("click", () => {
   pickQuote();
+});
+
+/* ========= 年度熱力圖 ========= */
+const yearPanel  = document.getElementById("yearPanel");
+const yearGrid   = document.getElementById("yearGrid");
+const btnYear    = document.getElementById("btnYearView");
+const btnCloseYear = document.getElementById("btnCloseYear");
+
+function daysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function renderYearHeatmap() {
+  yearGrid.innerHTML = "";
+  const now  = new Date();
+  const year = now.getFullYear();
+
+  // 預先算出每一天完成幾個習慣
+  const dateDoneCount = {};
+  habits.forEach(h => {
+    const byHabit = calendar[h.id] || {};
+    Object.keys(byHabit).forEach(k => {
+      const d = new Date(k);
+      if (d.getFullYear() !== year) return;
+      dateDoneCount[k] = (dateDoneCount[k] || 0) + 1;
+    });
+  });
+
+  for (let m = 0; m < 12; m++) {
+    const monthDiv = document.createElement("div");
+    monthDiv.className = "yearMonth";
+
+    const title = document.createElement("div");
+    title.className = "yearMonthTitle";
+    title.textContent = `${year} 年 ${m+1} 月`;
+    monthDiv.appendChild(title);
+
+    const daysWrap = document.createElement("div");
+    daysWrap.className = "yearDays";
+
+    const firstDay = new Date(year, m, 1).getDay(); // 0(日)~6(六)
+    // 空格補齊前面的 weekday
+    for (let i = 0; i < firstDay; i++) {
+      const empty = document.createElement("div");
+      empty.className = "yearDay heat0";
+      daysWrap.appendChild(empty);
+    }
+
+    const dim = daysInMonth(year, m);
+    for (let d = 1; d <= dim; d++) {
+      const dateObj = new Date(year, m, d);
+      const key = dateObj.toISOString().slice(0,10);
+      const count = dateDoneCount[key] || 0;
+      let level = "heat0";
+      if (count === 1) level = "heat1";
+      else if (count === 2) level = "heat2";
+      else if (count >= 3) level = "heat3";
+
+      const box = document.createElement("div");
+      box.className = "yearDay " + level;
+      daysWrap.appendChild(box);
+    }
+
+    monthDiv.appendChild(daysWrap);
+    yearGrid.appendChild(monthDiv);
+  }
+}
+
+btnYear.addEventListener("click", () => {
+  renderYearHeatmap();
+  yearPanel.style.display = "flex";
+});
+
+btnCloseYear.addEventListener("click", () => {
+  yearPanel.style.display = "none";
+});
+
+/* ========= 啟動儀式 (2 分鐘倒數) ========= */
+const startPanel    = document.getElementById("startPanel");
+const startTimerEl  = document.getElementById("startTimer");
+const btnStartRitual= document.getElementById("btnStartRitual");
+const btnCancelStart= document.getElementById("btnCancelStart");
+const btnBeginStart = document.getElementById("btnBeginStart");
+
+let startCountdownId = null;
+let startSecondsLeft = 120;
+
+function updateStartTimer() {
+  const m = String(Math.floor(startSecondsLeft/60)).padStart(2,"0");
+  const s = String(startSecondsLeft%60).padStart(2,"0");
+  startTimerEl.textContent = `${m}:${s}`;
+}
+
+function openStartPanel() {
+  // 重置
+  startSecondsLeft = 120;
+  updateStartTimer();
+  startPanel.style.display = "flex";
+}
+
+function closeStartPanel() {
+  startPanel.style.display = "none";
+  if (startCountdownId) {
+    clearInterval(startCountdownId);
+    startCountdownId = null;
+  }
+}
+
+btnStartRitual.addEventListener("click", openStartPanel);
+btnCancelStart.addEventListener("click", closeStartPanel);
+
+btnBeginStart.addEventListener("click", () => {
+  if (startCountdownId) return; // 已經在跑
+  startSecondsLeft = 120;
+  updateStartTimer();
+  startCountdownId = setInterval(() => {
+    startSecondsLeft--;
+    if (startSecondsLeft <= 0) {
+      clearInterval(startCountdownId);
+      startCountdownId = null;
+      updateStartTimer();
+      closeStartPanel();
+      showHUD("啟動完成。\n去做一件小事，然後點亮一顆星 ⭐");
+      if (navigator.vibrate) {
+        try { navigator.vibrate(200); } catch(e){}
+      }
+      return;
+    }
+    updateStartTimer();
+  }, 1000);
 });
 
 /* ========= Conway 背景 ========= */
